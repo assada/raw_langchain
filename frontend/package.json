@@ -1,0 +1,29 @@
+{
+  "name": "langchain-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for LangChain chat app",
+  "main": "src/app.js",
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "webpack --mode development --watch",
+    "serve": "webpack serve --mode development"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "sse.js": "^2.5.0",
+    "zustand": "^5.0.6"
+  },
+  "devDependencies": {
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4",
+    "webpack-dev-server": "^4.15.1",
+    "html-webpack-plugin": "^5.5.4",
+    "css-loader": "^6.8.1",
+    "style-loader": "^3.3.3",
+    "@babel/core": "^7.23.0",
+    "@babel/preset-env": "^7.23.0",
+    "@babel/preset-react": "^7.23.0",
+    "babel-loader": "^9.1.3"
+  }
+} 

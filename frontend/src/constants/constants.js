@@ -1,0 +1,36 @@
+export const STATUSES = {
+    CONNECTING: 'connecting',
+    CONNECTED: 'connected',
+    DISCONNECTED: 'disconnected'
+};
+
+export const MESSAGES = {
+    READY: 'Ready',
+    CONNECTING: 'Connecting...',
+    CONNECTED: 'Connected',
+    DISCONNECTED: 'Connection closed',
+    ERROR: 'Error',
+    THINKING: 'Thinking...',
+    CONNECTION_ERROR: 'Connection error',
+    RECEIVE_ERROR: 'Error receiving response',
+    CREATE_ERROR: 'Error creating connection'
+};
+
+export const CSS_CLASSES = {
+    MESSAGE: 'message',
+    USER_MESSAGE: 'user-message',
+    ASSISTANT_MESSAGE: 'assistant-message',
+    TOOL_CALL: 'tool-call',
+    LOADING: 'loading',
+    ERROR: 'error',
+    CONNECTION_STATUS: 'connection-status'
+};
+
+export const MESSAGE_TYPES = {
+    USER: 'user',
+    ASSISTANT: 'assistant',
+    TOOL_CALL: 'tool_call',
+    TOOL_RESULT: 'tool_result',
+    ERROR: 'error',
+    LOADING: 'loading'
+}; 
