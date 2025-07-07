@@ -1,5 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
-from fastapi.responses import StreamingResponse
+from sse_starlette.sse import EventSourceResponse
+
+from app.app.config import get_config
 from ..models.chat import ChatRequest
 from ..models.user import User
 from ..services.agent_service import AgentService
@@ -10,9 +12,10 @@ import logging
 
 
 logger = logging.getLogger(__name__)
+config = get_config()
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
-chat_service = AgentService()
+chat_service = AgentService(config)
 
 
 @chat_router.post("/{user_id}/thread/{thread_id}/stream")
@@ -24,9 +27,8 @@ async def stream_chat(
     try:
         logger.info(f"Received chat request: {request.message[:50]}...")
         
-        return StreamingResponse(
+        return EventSourceResponse(
             chat_service.stream_response(request.message, thread, user),
-            media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",
                 "Connection": "keep-alive",

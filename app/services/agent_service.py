@@ -1,27 +1,33 @@
-import base64
 import json
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Dict, Any
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_core.messages import HumanMessage
+
+from ..app.config import AppConfig
+
+from ..models.tool_result import ToolResultModel
+from ..models.ai_message import AIMessageModel
+from ..models.tool_call import ToolCall
 from ..models.user import User
 from ..models.thread import Thread
+
 
 def get_weather(city: str) -> str:
     """Get weather for a given city."""
     return f"It's always sunny in {city}!"
 
 class AgentService:
-    def __init__(self):
+    def __init__(self, config: AppConfig):
         self.agent = create_react_agent(
-            model="gpt-4o-mini",
+            model=config.agent_model,
             tools=[get_weather],
-            prompt="You are a helpful assistant"
+            prompt=config.agent_prompt
         )
         # checkpointer = InMemorySaver()
         # self.agent = self.agent.compile(checkpointer=checkpointer)
     
-    async def stream_response(self, message: str, thread: Thread, user: User) -> AsyncGenerator[str, None]:
+    async def stream_response(self, message: str, thread: Thread, user: User) -> AsyncGenerator[Dict[str, Any], None]:
         
         config = {"configurable": {"user_id": user.id, "thread_id": thread.id}}
         inputs = {"messages": [HumanMessage(content=message)]}
@@ -37,27 +43,38 @@ class AgentService:
                                 if msg_type == "AIMessage":
                                     if hasattr(msg, 'tool_calls') and msg.tool_calls:
                                         for tc in msg.tool_calls:
-                                            tool_call_data = {
-                                                "name": tc.get("name", ""),
-                                                "args": tc.get("args", {}),
-                                                "id": tc.get("id", "")
+                                            yield {
+                                                "event": "tool_call",
+                                                "data": ToolCall(
+                                                            name=tc.get("name", ""),
+                                                            args=tc.get("args", {}),
+                                                            id=tc.get("id", "")
+                                                        ).model_dump_json()
                                             }
-                                            yield f"event: tool_call\ndata: {json.dumps(tool_call_data)}\n\n"
                                     
                                     if getattr(msg, 'content', ''):
-                                        content_data = {"content": msg.content}
-                                        yield f"event: ai_message\ndata: {json.dumps(content_data)}\n\n"
+                                        yield {
+                                            "event": "ai_message",
+                                            "data": AIMessageModel(content=msg.content).model_dump_json()
+                                        }
                                 
                                 elif msg_type == "ToolMessage":
-                                    tool_result_data = {
-                                        "tool_name": getattr(msg, 'name', ''),
-                                        "content": getattr(msg, 'content', ''),
-                                        "tool_call_id": getattr(msg, 'tool_call_id', '')
+                                    yield {
+                                        "event": "tool_result",
+                                        "data": ToolResultModel(
+                                                    tool_name=getattr(msg, 'name', ''),
+                                                    content=getattr(msg, 'content', ''),
+                                                    tool_call_id=getattr(msg, 'tool_call_id', '')
+                                                ).model_dump_json()
                                     }
-                                    yield f"event: tool_result\ndata: {json.dumps(tool_result_data)}\n\n"
             
-            yield f"event: stream_end\ndata: {json.dumps({'status': 'completed'})}\n\n"
+            yield {
+                "event": "stream_end",
+                "data": json.dumps({'status': 'completed'})
+            }
                                     
         except Exception as e:
-            error_data = {"content": str(e)}
-            yield f"event: error\ndata: {json.dumps(error_data)}\n\n" 
+            yield {
+                "event": "error",
+                "data": json.dumps({"content": str(e)})
+            }

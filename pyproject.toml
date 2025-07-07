@@ -12,5 +12,6 @@ dependencies = [
     "langgraph>=0.5.1",
     "python-dotenv>=1.1.1",
     "python-multipart>=0.0.20",
+    "sse-starlette==2.4.1",
     "uvicorn>=0.35.0",
 ]
