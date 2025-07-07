@@ -16,9 +16,9 @@ def is_valid_uuid4(uuid_: str) -> bool:
 
 def create_app(config: AppConfig) -> FastAPI:
     app = FastAPI(
-        title="Test Application",
+        title="Raw Langchain",
         description="A test application",
-        version="1.0.0",
+        version="0.0.1",
         debug=config.debug
     )
     
