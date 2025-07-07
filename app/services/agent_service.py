@@ -4,8 +4,8 @@ from typing import AsyncGenerator
 from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_core.messages import HumanMessage
-from app.models.user import User
-from app.models.thread import Thread
+from ..models.user import User
+from ..models.thread import Thread
 
 def get_weather(city: str) -> str:
     """Get weather for a given city."""

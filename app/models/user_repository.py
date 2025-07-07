@@ -1,6 +1,5 @@
-from app.models.user import User
+from .user import User
 from fastapi import HTTPException, Path
-from app.models.user import User
 import logging
 
 

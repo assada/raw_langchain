@@ -1,11 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.responses import StreamingResponse
-from app.models.chat import ChatRequest
-from app.models.user import User
-from app.services.agent_service import AgentService
-from app.models.user_repository import UserRepository
-from app.models.thread_repository import ThreadRepository
-from app.models.thread import Thread
+from ..models.chat import ChatRequest
+from ..models.user import User
+from ..services.agent_service import AgentService
+from ..models.user_repository import UserRepository
+from ..models.thread_repository import ThreadRepository
+from ..models.thread import Thread
 import logging
 
 

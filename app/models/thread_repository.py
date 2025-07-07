@@ -1,4 +1,4 @@
-from app.models.thread import Thread
+from .thread import Thread
 from fastapi import HTTPException, Path
 import logging
 
