@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useCallback } from 'react';
 import { useChatStore } from '../store/index.js';
 import { useSSE } from '../hooks/index.js';
 import { Message } from './Message.jsx';
@@ -22,13 +22,9 @@ export const ChatApp = () => {
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
-    const scrollToBottom = useCallback(() => {
+    useLayoutEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, []);
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages, currentAssistantMessage, scrollToBottom]);
+    }, [messages.length, currentAssistantMessage]);
 
     useEffect(() => {
         inputRef.current?.focus();

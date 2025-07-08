@@ -2,6 +2,8 @@ from uuid import UUID, uuid4
 from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from prometheus_fastapi_instrumentator import Instrumentator
 from ..middleware.cors_middleware import setup_cors_middleware, CORSConfig
 from ..middleware.auth_middleware import AuthMiddleware
 from ..routes.chat_routes import chat_router
@@ -21,7 +23,7 @@ def create_app(config: AppConfig) -> FastAPI:
         version="0.0.1",
         debug=config.debug
     )
-    
+
     cors_config = CORSConfig(
         allow_origins=config.cors_origins,
         allow_credentials=config.cors_allow_credentials,
@@ -43,6 +45,11 @@ def create_app(config: AppConfig) -> FastAPI:
     
     app.include_router(chat_router, prefix="/api/v1")
     app.include_router(health_router, prefix="/api/v1")
+
+    FastAPIInstrumentor.instrument_app(app)
+    Instrumentator(
+        excluded_handlers=["/docs", "/metrics", "/api/v1/health", "/openapi.json"],
+    ).instrument(app).expose(app)
     
     try:
         app.mount("/", StaticFiles(directory=config.static_files_directory, html=True), name="frontend")

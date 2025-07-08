@@ -13,7 +13,8 @@ def main():
         "main:app",
         host=config.host, 
         port=config.port, 
-        reload=config.reload
+        reload=config.reload,
+        server_header=False
     )
 
 if __name__ == "__main__":
