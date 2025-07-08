@@ -1,6 +1,6 @@
 import uvicorn
-from app.app.config import get_config
-from app.app.app_factory import create_app
+from app.bootstrap.config import get_config
+from app.bootstrap.app_factory import create_app
 from app.utils.logger import setup_logger
 
 config = get_config()

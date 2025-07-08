@@ -4,13 +4,9 @@ from langgraph.prebuilt import create_react_agent
 from langgraph.checkpoint.memory import InMemorySaver
 from langchain_core.messages import HumanMessage
 
-from ..app.config import AppConfig
-
-from ..models.tool_result import ToolResultModel
-from ..models.ai_message import AIMessageModel
-from ..models.tool_call import ToolCall
-from ..models.user import User
-from ..models.thread import Thread
+from app.bootstrap.config import AppConfig
+from app.models import User, Thread
+from app.agent.models import ToolCall, AIMessage, ToolResult
 
 
 def get_weather(city: str) -> str:
@@ -55,13 +51,13 @@ class AgentService:
                                     if getattr(msg, 'content', ''):
                                         yield {
                                             "event": "ai_message",
-                                            "data": AIMessageModel(content=msg.content).model_dump_json()
+                                            "data": AIMessage(content=msg.content).model_dump_json()
                                         }
                                 
                                 elif msg_type == "ToolMessage":
                                     yield {
                                         "event": "tool_result",
-                                        "data": ToolResultModel(
+                                        "data": ToolResult(
                                                     tool_name=getattr(msg, 'name', ''),
                                                     content=getattr(msg, 'content', ''),
                                                     tool_call_id=getattr(msg, 'tool_call_id', '')

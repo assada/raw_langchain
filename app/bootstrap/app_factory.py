@@ -4,10 +4,10 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from prometheus_fastapi_instrumentator import Instrumentator
-from ..middleware.cors_middleware import setup_cors_middleware, CORSConfig
-from ..middleware.auth_middleware import AuthMiddleware
-from ..routes.chat_routes import chat_router
-from ..routes.health_routes import health_router
+from app.http.middleware.cors_middleware import setup_cors_middleware, CORSConfig
+from app.http.middleware.auth_middleware import AuthMiddleware
+from app.http.routes.chat_routes import chat_router
+from app.http.routes.health_routes import health_router
 from .config import AppConfig
 
 def is_valid_uuid4(uuid_: str) -> bool:
