@@ -3,7 +3,7 @@ import { useChatStore } from '../store/index.js';
 import { useSSE } from '../hooks/index.js';
 import { Message } from './Message.jsx';
 import { ConnectionStatus } from './ConnectionStatus.jsx';
-import { MESSAGES, MESSAGE_TYPES, CSS_CLASSES } from '../constants/constants.js';
+import { MESSAGES, SENDER_TYPES, MESSAGE_SUBTYPES, CSS_CLASSES } from '../constants/constants.js';
 
 export const ChatApp = () => {
     const {
@@ -37,7 +37,7 @@ export const ChatApp = () => {
     const handleSendMessage = useCallback(async () => {
         if (!input.trim() || isSending) return;
 
-        addMessage(input, MESSAGE_TYPES.USER);
+        addMessage(input, SENDER_TYPES.USER, MESSAGE_SUBTYPES.MESSAGE);
         const messageToSend = input;
         clearInput();
         
@@ -72,8 +72,9 @@ export const ChatApp = () => {
                         message={{
                             id: 'current-assistant',
                             content: currentAssistantMessage,
-                            type: MESSAGE_TYPES.ASSISTANT,
-                            className: ''
+                            sender: SENDER_TYPES.ASSISTANT,
+                            messageType: MESSAGE_SUBTYPES.MESSAGE,
+                            className: isSending ? 'typing-cursor' : ''
                         }}
                     />
                 )}
@@ -83,7 +84,8 @@ export const ChatApp = () => {
                         message={{
                             id: 'loading',
                             content: MESSAGES.THINKING,
-                            type: MESSAGE_TYPES.LOADING,
+                            sender: SENDER_TYPES.ASSISTANT,
+                            messageType: MESSAGE_SUBTYPES.LOADING,
                             className: CSS_CLASSES.LOADING
                         }}
                     />

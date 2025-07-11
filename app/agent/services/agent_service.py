@@ -1,69 +1,107 @@
 import json
+import logging
+import inspect
 from typing import AsyncGenerator, Dict, Any
-from langgraph.prebuilt import create_react_agent
-from langgraph.checkpoint.memory import InMemorySaver
-from langchain_core.messages import HumanMessage
 
-from app.bootstrap.config import AppConfig
+from langchain_core.messages import HumanMessage, AIMessage, AIMessageChunk
+from langgraph.types import Interrupt
+
 from app.models import User, Thread
-from app.agent.models import ToolCall, AIMessage, ToolResult
+from app.agent.utils.utils import remove_tool_calls, langchain_to_chat_message, convert_message_content_to_string
 
+from app.agent.graph.graph import Graph
 
-def get_weather(city: str) -> str:
-    """Get weather for a given city."""
-    return f"It's always sunny in {city}!"
+logger = logging.getLogger(__name__)
 
 class AgentService:
-    def __init__(self, config: AppConfig):
-        self.agent = create_react_agent(
-            model=config.agent_model,
-            tools=[get_weather],
-            prompt=config.agent_prompt
-        )
-        # checkpointer = InMemorySaver()
-        # self.agent = self.agent.compile(checkpointer=checkpointer)
+    def __init__(self, graph: Graph):
+        self.graph = graph
     
+    def _create_ai_message(parts: dict) -> AIMessage:
+        sig = inspect.signature(AIMessage)
+        valid_keys = set(sig.parameters)
+        filtered = {k: v for k, v in parts.items() if k in valid_keys}
+        return AIMessage(**filtered)
+
     async def stream_response(self, message: str, thread: Thread, user: User) -> AsyncGenerator[Dict[str, Any], None]:
         
-        config = {"configurable": {"user_id": user.id, "thread_id": thread.id}}
+        config = {
+            "configurable": {
+                "user_id": user.id, 
+                "thread_id": thread.id
+            }
+        }
         inputs = {"messages": [HumanMessage(content=message)]}
 
         try:
-            for mode, chunk in self.agent.stream(inputs, config=config, stream_mode=["updates", "custom"]):
-                if isinstance(chunk, dict):
-                    for key, value in chunk.items():
-                        if isinstance(value, dict) and "messages" in value:
-                            for msg in value["messages"]:
-                                msg_type = type(msg).__name__
-                                
-                                if msg_type == "AIMessage":
-                                    if hasattr(msg, 'tool_calls') and msg.tool_calls:
-                                        for tc in msg.tool_calls:
-                                            yield {
-                                                "event": "tool_call",
-                                                "data": ToolCall(
-                                                            name=tc.get("name", ""),
-                                                            args=tc.get("args", {}),
-                                                            id=tc.get("id", "")
-                                                        ).model_dump_json()
-                                            }
-                                    
-                                    if getattr(msg, 'content', ''):
-                                        yield {
-                                            "event": "ai_message",
-                                            "data": AIMessage(content=msg.content).model_dump_json()
-                                        }
-                                
-                                elif msg_type == "ToolMessage":
-                                    yield {
-                                        "event": "tool_result",
-                                        "data": ToolResult(
-                                                    tool_name=getattr(msg, 'name', ''),
-                                                    content=getattr(msg, 'content', ''),
-                                                    tool_call_id=getattr(msg, 'tool_call_id', '')
-                                                ).model_dump_json()
-                                    }
-            
+            async for stream_event in self.graph.astream(inputs, config=config, stream_mode=["updates", "messages", "custom"]):
+                logger.debug(f"Chunk: {stream_event}")
+
+
+                if not isinstance(stream_event, tuple):
+                    continue
+                stream_mode, event = stream_event
+                new_messages = []
+
+
+                if stream_mode == "updates":
+                    for node, updates in event.items():
+                        if node == "__interrupt__":
+                            interrupt: Interrupt
+                            for interrupt in updates:
+                                new_messages.append(AIMessage(content=interrupt.value))
+                            continue
+                        updates = updates or {}
+                        update_messages = updates.get("messages", [])
+                        new_messages.extend(update_messages)
+
+                if stream_mode == "custom":
+                    new_messages = [event]
+
+                processed_messages = []
+                current_message: dict[str, Any] = {}
+                for message in new_messages:
+                    if isinstance(message, tuple):
+                        key, value = message
+                        current_message[key] = value
+                    else:
+                        if current_message:
+                            processed_messages.append(self._create_ai_message(current_message))
+                            current_message = {}
+                        processed_messages.append(message)
+                
+                if current_message:
+                    processed_messages.append(self._create_ai_message(current_message))
+                
+                for message in processed_messages:
+                    try:
+                        chat_message = langchain_to_chat_message(message)
+                    except Exception as e:
+                        logger.error(f"Error parsing message: {e}")
+                        yield {
+                            "event": "error",
+                            "data": json.dumps({"content": "Unexpected error"})
+                        }
+                        continue
+                    if chat_message.type == "human_message" and chat_message.content == message:
+                        continue
+                    yield {
+                        "event": chat_message.type,
+                        "data": chat_message.model_dump_json()
+                    }
+                
+                if stream_mode == "messages":
+                    msg, metadata = event
+                    if "skip_stream" in metadata.get("tags", []):
+                        continue
+                    if not isinstance(msg, AIMessageChunk):
+                        continue
+                    content = remove_tool_calls(msg.content)
+                    if content:
+                        yield {
+                            "event": "token",
+                            "data": json.dumps({"type": "token", "content": convert_message_content_to_string(content)})
+                        }
             yield {
                 "event": "stream_end",
                 "data": json.dumps({'status': 'completed'})

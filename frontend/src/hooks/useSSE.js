@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { SSE } from 'sse.js';
 import { useChatStore } from '../store/index.js';
-import { STATUSES, MESSAGES, MESSAGE_TYPES, CSS_CLASSES } from '../constants/constants.js';
+import { STATUSES, MESSAGES, SENDER_TYPES, MESSAGE_SUBTYPES, CSS_CLASSES } from '../constants/constants.js';
 
 export const useSSE = () => {
     const sseRef = useRef(null);
@@ -12,7 +12,8 @@ export const useSSE = () => {
         appendToCurrentAssistantMessage,
         addMessage,
         finalizeAssistantMessage,
-        clearCurrentAssistantMessage
+        clearCurrentAssistantMessage,
+        setCurrentAssistantMessage
     } = useChatStore();
 
     const parseEventData = useCallback((e) => {
@@ -45,13 +46,11 @@ export const useSSE = () => {
     const handleAIMessage = useCallback((e) => {
         const data = parseEventData(e);
         if (!data) return;
-
-        console.log('AI Message:', data);
         
         if (data.content) {
-            appendToCurrentAssistantMessage(data.content);
+            setCurrentAssistantMessage(data.content);
         }
-    }, [parseEventData, appendToCurrentAssistantMessage]);
+    }, [parseEventData, setCurrentAssistantMessage]);
 
     const handleToolCall = useCallback((e) => {
         const data = parseEventData(e);
@@ -60,7 +59,7 @@ export const useSSE = () => {
         console.log('Tool Call:', data);
         
         const toolMessage = `🔧 Tool call: ${data.name}(${JSON.stringify(data.args)})`;
-        addMessage(toolMessage, MESSAGE_TYPES.ASSISTANT, CSS_CLASSES.TOOL_CALL);
+        addMessage(toolMessage, SENDER_TYPES.ASSISTANT, MESSAGE_SUBTYPES.TOOL_CALL, CSS_CLASSES.TOOL_CALL);
     }, [parseEventData, addMessage]);
 
     const handleToolResult = useCallback((e) => {
@@ -70,15 +69,26 @@ export const useSSE = () => {
         console.log('Tool Result:', data);
         
         const toolMessage = `🔧 ${data.tool_name}: ${data.content}`;
-        addMessage(toolMessage, MESSAGE_TYPES.ASSISTANT, CSS_CLASSES.TOOL_CALL);
+        addMessage(toolMessage, SENDER_TYPES.ASSISTANT, MESSAGE_SUBTYPES.TOOL_RESULT, CSS_CLASSES.TOOL_CALL);
     }, [parseEventData, addMessage]);
+
+    const handleToken = useCallback((e) => {
+        const data = parseEventData(e);
+        if (!data) return;
+
+        console.log('Token:', data);
+        
+        if (data.content) {
+            appendToCurrentAssistantMessage(data.content);
+        }
+    }, [parseEventData, appendToCurrentAssistantMessage]);
 
     const handleSSEError = useCallback((e) => {
         console.error('SSE Error:', e);
         setConnectionStatus(STATUSES.DISCONNECTED, MESSAGES.CONNECTION_ERROR);
         
         const errorMessage = extractErrorMessage(e);
-        addMessage(errorMessage, MESSAGE_TYPES.ERROR, CSS_CLASSES.ERROR);
+        addMessage(errorMessage, SENDER_TYPES.SYSTEM, MESSAGE_SUBTYPES.ERROR, CSS_CLASSES.ERROR);
         
         setLoading(false);
         setSending(false);
@@ -128,6 +138,7 @@ export const useSSE = () => {
             'ai_message': handleAIMessage,
             'tool_call': handleToolCall,
             'tool_result': handleToolResult,
+            'token': handleToken,
             'error': handleSSEError,
             'abort': handleSSEAbort,
             'readystatechange': handleReadyStateChange,
@@ -142,6 +153,7 @@ export const useSSE = () => {
         handleAIMessage,
         handleToolCall,
         handleToolResult,
+        handleToken,
         handleSSEError,
         handleSSEAbort,
         handleReadyStateChange,
@@ -179,7 +191,7 @@ export const useSSE = () => {
 
         } catch (error) {
             console.error('Error:', error);
-            addMessage(MESSAGES.CREATE_ERROR, MESSAGE_TYPES.ERROR, CSS_CLASSES.ERROR);
+            addMessage(MESSAGES.CREATE_ERROR, SENDER_TYPES.SYSTEM, MESSAGE_SUBTYPES.ERROR, CSS_CLASSES.ERROR);
             setLoading(false);
             setSending(false);
         }

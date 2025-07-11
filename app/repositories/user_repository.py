@@ -12,7 +12,7 @@ class UserRepository:
             if user_id <= 0:
                 raise HTTPException(status_code=400, detail="Invalid user ID")
             
-            # TODO: get user from database
+            # TODO: get user from database or api?
             user = User(id=user_id, email=f"user{user_id}@example.com")
             
             if not user:

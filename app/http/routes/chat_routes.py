@@ -4,9 +4,10 @@ from app.http.requests import ChatRequest
 from app.models import User, Thread
 from app.repositories import UserRepository, ThreadRepository
 from app.http.controllers import ChatController
+from app.bootstrap.config import get_config
 
 chat_router = APIRouter(prefix="/chat", tags=["chat"])
-chat_controller = ChatController()
+chat_controller = ChatController(get_config())
 
 @chat_router.post("/{user_id}/thread/{thread_id}/stream")
 async def stream_chat(

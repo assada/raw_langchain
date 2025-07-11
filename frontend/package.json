@@ -12,6 +12,8 @@
     "@langchain/core": "^0.3.62",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-icons": "^5.5.0",
+    "react-markdown": "^10.1.0",
     "sse.js": "^2.5.0",
     "zustand": "^5.0.6"
   },

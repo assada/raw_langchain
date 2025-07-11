@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { STATUSES, MESSAGES, MESSAGE_TYPES } from '../constants/constants.js';
+import { STATUSES, MESSAGES, SENDER_TYPES, MESSAGE_SUBTYPES } from '../constants/constants.js';
 
 export const useChatStore = create((set, get) => ({
     messages: [],
@@ -29,12 +29,13 @@ export const useChatStore = create((set, get) => ({
             currentAssistantMessage: state.currentAssistantMessage + content 
         })),
     
-    addMessage: (content, type = MESSAGE_TYPES.USER, className = '') => 
+    addMessage: (content, sender = SENDER_TYPES.USER, messageType = MESSAGE_SUBTYPES.MESSAGE, className = '') => 
         set((state) => ({
             messages: [...state.messages, {
                 id: Date.now() + Math.random(),
                 content,
-                type,
+                sender,
+                messageType,
                 className,
                 timestamp: new Date().toISOString()
             }]
@@ -47,7 +48,8 @@ export const useChatStore = create((set, get) => ({
                 messages: [...state.messages, {
                     id: Date.now() + Math.random(),
                     content: currentAssistantMessage,
-                    type: MESSAGE_TYPES.ASSISTANT,
+                    sender: SENDER_TYPES.ASSISTANT,
+                    messageType: MESSAGE_SUBTYPES.MESSAGE,
                     className: '',
                     timestamp: new Date().toISOString()
                 }],

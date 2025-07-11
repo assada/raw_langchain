@@ -7,7 +7,6 @@ config = get_config()
 setup_logger()
 app = create_app(config)
 
-
 def main():
     uvicorn.run(
         "main:app",

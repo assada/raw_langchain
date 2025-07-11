@@ -26,9 +26,14 @@ export const CSS_CLASSES = {
     CONNECTION_STATUS: 'connection-status'
 };
 
-export const MESSAGE_TYPES = {
+export const SENDER_TYPES = {
     USER: 'user',
     ASSISTANT: 'assistant',
+    SYSTEM: 'system'
+};
+
+export const MESSAGE_SUBTYPES = {
+    MESSAGE: 'message',
     TOOL_CALL: 'tool_call',
     TOOL_RESULT: 'tool_result',
     ERROR: 'error',

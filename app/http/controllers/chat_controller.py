@@ -2,7 +2,8 @@ from fastapi import HTTPException, Depends
 from sse_starlette.sse import EventSourceResponse
 import logging
 
-from app.bootstrap.config import get_config
+from app.bootstrap.config import AppConfig
+from app.agent.graph.demo_graph import DemoGraph
 from app.http.requests import ChatRequest
 from app.models import User, Thread
 from app.repositories import UserRepository, ThreadRepository
@@ -11,9 +12,9 @@ from app.agent.services import AgentService
 logger = logging.getLogger(__name__)
 
 class ChatController:
-    def __init__(self):
-        self.config = get_config()
-        self.agent_service = AgentService(self.config)
+    def __init__(self, config: AppConfig):
+        graph = DemoGraph(config).build_graph()
+        self.agent_service = AgentService(graph)
     
     async def stream_chat(
         self, 
