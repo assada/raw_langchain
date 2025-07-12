@@ -1,35 +1,37 @@
-from pydantic import BaseModel
-from typing import Optional
 import os
+from typing import Optional
+
 from dotenv import load_dotenv
+from pydantic import BaseModel
 
 load_dotenv()
 
-class AppConfig(BaseModel):    
+
+class AppConfig(BaseModel):
     host: str = "127.0.0.1"
     port: int = 8000
     debug: bool = False
     reload: bool = False
-    
+
     agent_model: str = "openai/gpt-4o-mini"
     agent_prompt: str = "You are a helpful assistant"
-    
+
     static_files_directory: str = "frontend/dist"
-    
+
     secret_key: Optional[str] = None
-    
+
     cors_origins: list = ["*"]
     cors_allow_credentials: bool = True
     cors_allow_methods: list = ["*"]
     cors_allow_headers: list = ["*"]
-    
+
     database_url: Optional[str] = None
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_db: str = "raw_langchain"
     postgres_user: str = "postgres"
     postgres_password: str = "postgres"
-    
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -41,7 +43,7 @@ def get_config() -> AppConfig:
         reload=os.getenv("RELOAD", "false").lower() == "true",
         host=os.getenv("HOST", "127.0.0.1"),
         port=int(os.getenv("PORT", "8000")),
-        agent_model=os.getenv("AGENT_MODEL", "openai/gpt-4o"),
+        agent_model=os.getenv("AGENT_MODEL", "openai/gpt-4o-mini"),
         agent_prompt=os.getenv("AGENT_PROMPT", "You are a helpful assistant"),
         static_files_directory=os.getenv("STATIC_FILES_DIR", "frontend/dist"),
         secret_key=os.getenv("SECRET_KEY"),

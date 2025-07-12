@@ -18,7 +18,7 @@ export const ChatApp = () => {
         clearInput
     } = useChatStore();
 
-    const { sendMessage, closeConnection } = useSSE();
+    const { sendMessage, closeConnection, loadChatHistory } = useSSE();
     const messagesEndRef = useRef(null);
     const inputRef = useRef(null);
 
@@ -29,10 +29,12 @@ export const ChatApp = () => {
     useEffect(() => {
         inputRef.current?.focus();
         
+        loadChatHistory();
+        
         return () => {
             closeConnection();
         };
-    }, [closeConnection]);
+    }, [closeConnection, loadChatHistory]);
 
     const handleSendMessage = useCallback(async () => {
         if (!input.trim() || isSending) return;

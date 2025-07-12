@@ -23,7 +23,8 @@ export const CSS_CLASSES = {
     TOOL_CALL: 'tool-call',
     LOADING: 'loading',
     ERROR: 'error',
-    CONNECTION_STATUS: 'connection-status'
+    CONNECTION_STATUS: 'connection-status',
+    UI_MESSAGE: 'ui-message'
 };
 
 export const SENDER_TYPES = {
@@ -37,5 +38,6 @@ export const MESSAGE_SUBTYPES = {
     TOOL_CALL: 'tool_call',
     TOOL_RESULT: 'tool_result',
     ERROR: 'error',
-    LOADING: 'loading'
+    LOADING: 'loading',
+    UI: 'ui'
 }; 

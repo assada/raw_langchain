@@ -1,7 +1,7 @@
-from fastapi import APIRouter
-from datetime import datetime
 import logging
+from datetime import datetime
 
+from fastapi import APIRouter
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ async def health_check():
 
 @health_router.get("/detailed")
 async def detailed_health_check():
-    try: 
+    try:
         return {
             "status": "healthy",
             "timestamp": datetime.utcnow().isoformat(),
@@ -36,4 +36,4 @@ async def detailed_health_check():
             "timestamp": datetime.utcnow().isoformat(),
             "service": "enterprise-chat-api",
             "error": str(e)
-        } 
+        }

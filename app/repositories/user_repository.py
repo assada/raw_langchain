@@ -1,26 +1,27 @@
-from app.models import User
-from fastapi import HTTPException, Path
 import logging
 
+from fastapi import HTTPException, Path
+
+from app.models import User
 
 logger = logging.getLogger(__name__)
 
 
 class UserRepository:
-    async def get_user_by_id(user_id: int = Path(..., description="User ID")) -> User:
+    async def get_user_by_id(user_id: str = Path(..., description="User ID")) -> User:
         try:
-            if user_id <= 0:
+            if user_id is None or not isinstance(user_id, str):
                 raise HTTPException(status_code=400, detail="Invalid user ID")
-            
+
             # TODO: get user from database or api?
             user = User(id=user_id, email=f"user{user_id}@example.com")
-            
+
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
-            
+
             logger.info(f"Resolved user: {user.id} - {user.email}")
             return user
-            
+
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid user ID format")
         except HTTPException:

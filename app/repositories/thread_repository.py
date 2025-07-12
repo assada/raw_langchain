@@ -1,25 +1,27 @@
-from app.models import Thread
-from fastapi import HTTPException, Path
 import logging
 
+from fastapi import HTTPException, Path
+
+from app.models import Thread
 
 logger = logging.getLogger(__name__)
 
+
 class ThreadRepository:
-    async def get_thread_by_id(thread_id: int = Path(..., description="Thread ID")) -> Thread:
+    async def get_thread_by_id(thread_id: str = Path(..., description="Thread ID")) -> Thread:
         try:
-            if thread_id <= 0:
+            if thread_id is None or not isinstance(thread_id, str):
                 raise HTTPException(status_code=400, detail="Invalid thread ID")
-            
+
             # TODO: get thread from database
-            thread = Thread(id=thread_id, user_id=1)
-            
+            thread = Thread(id=thread_id)
+
             if not thread:
                 raise HTTPException(status_code=404, detail="Thread not found")
-            
+
             logger.info(f"Resolved thread: {thread.id}")
             return thread
-            
+
         except ValueError:
             raise HTTPException(status_code=400, detail="Invalid thread ID format")
         except HTTPException:

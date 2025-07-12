@@ -15,6 +15,7 @@ class InputState:
         default_factory=list
     )
 
+
 @dataclass
 class State(InputState):
     is_last_step: IsLastStep = field(default=False)

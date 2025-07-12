@@ -13,8 +13,37 @@ export const useSSE = () => {
         addMessage,
         finalizeAssistantMessage,
         clearCurrentAssistantMessage,
-        setCurrentAssistantMessage
+        setCurrentAssistantMessage,
+        loadHistory
     } = useChatStore();
+
+    const loadChatHistory = useCallback(async () => {
+        setLoading(true);
+        
+        try {
+            const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogMTAzLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
+            
+            const response = await fetch('/api/v1/chat/1437ade37359488e95c0727a1cdf1786d24edce3/thread/edd5a53c-da04-4db4-84e0-a9f3592eef45', {
+                headers: {
+                    'Authorization': 'Bearer ' + authToken
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            if (data.messages && Array.isArray(data.messages)) {
+                loadHistory(data.messages);
+            }
+        } catch (error) {
+            console.error('Error loading chat history:', error);
+            addMessage('Error loading chat history', SENDER_TYPES.SYSTEM, MESSAGE_SUBTYPES.ERROR, CSS_CLASSES.ERROR);
+        } finally {
+            setLoading(false);
+        }
+    }, [setLoading, loadHistory, addMessage]);
 
     const parseEventData = useCallback((e) => {
         try {
@@ -83,6 +112,13 @@ export const useSSE = () => {
         }
     }, [parseEventData, appendToCurrentAssistantMessage]);
 
+    const handleUIMessage = useCallback((e) => {
+        const data = parseEventData(e);
+        if (!data) return;
+        
+        addMessage(data, SENDER_TYPES.ASSISTANT, MESSAGE_SUBTYPES.UI, CSS_CLASSES.UI_MESSAGE);
+    }, [parseEventData, addMessage]);
+
     const handleSSEError = useCallback((e) => {
         console.error('SSE Error:', e);
         setConnectionStatus(STATUSES.DISCONNECTED, MESSAGES.CONNECTION_ERROR);
@@ -139,6 +175,7 @@ export const useSSE = () => {
             'tool_call': handleToolCall,
             'tool_result': handleToolResult,
             'token': handleToken,
+            'ui': handleUIMessage,
             'error': handleSSEError,
             'abort': handleSSEAbort,
             'readystatechange': handleReadyStateChange,
@@ -154,6 +191,7 @@ export const useSSE = () => {
         handleToolCall,
         handleToolResult,
         handleToken,
+        handleUIMessage,
         handleSSEError,
         handleSSEAbort,
         handleReadyStateChange,
@@ -172,15 +210,16 @@ export const useSSE = () => {
         clearCurrentAssistantMessage();
 
         try {
+            // TODO: Mocked data, replace with actual API call
             const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogMTAzLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
-            sseRef.current = new SSE('/api/v1/chat/1/thread/1/stream', {
+            sseRef.current = new SSE('/api/v1/chat/1437ade37359488e95c0727a1cdf1786d24edce3/thread/edd5a53c-da04-4db4-84e0-a9f3592eef45/stream', {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + authToken
                 },
                 payload: JSON.stringify({
                     message: message,
-                    thread_id: 1
+                    // thread_id: 1
                 }),
                 autoReconnect: false,
                 start: false
@@ -212,6 +251,7 @@ export const useSSE = () => {
 
     return {
         sendMessage,
-        closeConnection
+        closeConnection,
+        loadChatHistory
     };
 }; 
