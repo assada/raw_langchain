@@ -5,6 +5,14 @@
 2. `docker compose up`
 3. Open your browser and go to `http://localhost:8000`
 
+### Development
+
+1. `uv sync`
+2. `cd frontend`
+3. `npm run build`
+4. `cd ..`
+5. `uv run dev`
+
 ## TODO:
 
  - [x] Add a way to add tools to the agent
