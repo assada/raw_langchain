@@ -1,8 +1,13 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import Field
+
+from app.agent.models.ChatMessage import ChatMessage
 
 
-class HumanMessage(BaseModel):
+class HumanMessage(ChatMessage):
     type: Literal["human_message"] = "human_message"
-    content: str
+    content: str = Field(
+        description="Message content",
+        examples=["What is the weather like today?"],
+    )

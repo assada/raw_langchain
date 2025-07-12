@@ -14,6 +14,7 @@ from langchain_core.messages import (
 
 from app.agent.models import ToolCall, ToolResult, AIMessage as CustomAIMessage, HumanMessage as CustomHumanMessage, \
     CustomUIMessage
+from app.agent.models.ChatMessage import ChatMessage
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +49,7 @@ def convert_message_content_to_string(content: str | list[str | dict]) -> str:
     return "".join(text)
 
 
-def langchain_to_chat_message(message: BaseMessage) -> CustomAIMessage | CustomHumanMessage | ToolResult | ToolCall:
+def langchain_to_chat_message(message: BaseMessage) -> ChatMessage:
     match message:
         case HumanMessage():
             return CustomHumanMessage(content=convert_message_content_to_string(message.content))

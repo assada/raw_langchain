@@ -1,4 +1,4 @@
-from uuid import UUID, uuid4
+from uuid import uuid4
 
 from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
@@ -10,14 +10,8 @@ from app.http.middleware.auth_middleware import AuthMiddleware
 from app.http.middleware.cors_middleware import setup_cors_middleware, CORSConfig
 from app.http.routes.chat_routes import chat_router
 from app.http.routes.health_routes import health_router
+from app.utils.utils import is_valid_uuid4
 from .config import AppConfig
-
-
-def is_valid_uuid4(uuid_: str) -> bool:
-    try:
-        return UUID(uuid_).version == 4
-    except ValueError:
-        return False
 
 
 def create_app(config: AppConfig) -> FastAPI:

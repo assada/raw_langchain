@@ -3,6 +3,7 @@ import json
 import logging
 from typing import Any
 from typing import AsyncGenerator, Dict
+from uuid import uuid4
 
 from langchain_core.messages import AnyMessage
 from langchain_core.messages import HumanMessage, AIMessage, AIMessageChunk
@@ -10,6 +11,7 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.types import Interrupt
 
 from app.agent.graph.graph import Graph
+from app.agent.models import Token
 from app.agent.utils.utils import remove_tool_calls, langchain_to_chat_message, convert_message_content_to_string
 from app.http.responses import ChatHistory
 from app.models import User, Thread
@@ -28,13 +30,16 @@ class AgentService:
         return AIMessage(**filtered)
 
     async def stream_response(self, message: str, thread: Thread, user: User) -> AsyncGenerator[Dict[str, Any], None]:
+        run_id = uuid4()
 
-        config = {
-            "configurable": {
+        config = RunnableConfig(
+            configurable={
                 "user_id": user.id,
                 "thread_id": thread.id
-            }
-        }
+            },
+            run_id=run_id
+        )
+
         inputs = {"messages": [HumanMessage(content=message)]}
 
         try:
@@ -79,6 +84,7 @@ class AgentService:
                 for message in processed_messages:
                     try:
                         chat_message = langchain_to_chat_message(message)
+                        chat_message.run_id = str(run_id)
                     except Exception as e:
                         logger.error(f"Error parsing message: {e}")
                         yield {
@@ -101,19 +107,23 @@ class AgentService:
                         continue
                     content = remove_tool_calls(msg.content)
                     if content:
+                        token = Token(
+                            run_id=str(run_id),
+                            content=convert_message_content_to_string(content),
+                        )
                         yield {
                             "event": "token",
-                            "data": json.dumps({"type": "token", "content": convert_message_content_to_string(content)})
+                            "data": token.model_dump_json()
                         }
             yield {
                 "event": "stream_end",
-                "data": json.dumps({'status': 'completed'})
+                "data": json.dumps({"run_id": str(run_id), 'status': 'completed'})
             }
 
         except Exception as e:
             yield {
                 "event": "error",
-                "data": json.dumps({"content": str(e)})
+                "data": json.dumps({'run_id': str(run_id), 'content': str(e)})
             }
 
     async def load_history(self, thread: Thread, user: User) -> ChatHistory:

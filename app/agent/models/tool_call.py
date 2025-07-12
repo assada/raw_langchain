@@ -1,10 +1,21 @@
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel
+from pydantic import Field
+
+from app.agent.models.ChatMessage import ChatMessage
 
 
-class ToolCall(BaseModel):
+class ToolCall(ChatMessage):
     type: Literal["tool_call"] = "tool_call"
-    name: str
-    args: dict
-    id: str
+    name: str = Field(
+        description="Name of the tool to call",
+        examples=["weather_tool"],
+    )
+    args: dict[str, Any] = Field(
+        description="Arguments to pass to the tool",
+        examples=[{"location": "Kyiv", "date": "2023-10-01"}],
+    )
+    id: str = Field(
+        description="Unique identifier for the tool call",
+        examples=["call_sUSKIlBJQ2IkWTNhFShLIB9c"],
+    )
