@@ -8,9 +8,10 @@ from uuid import uuid4
 from langchain_core.messages import AnyMessage
 from langchain_core.messages import HumanMessage, AIMessage, AIMessageChunk
 from langchain_core.runnables import RunnableConfig
-from langgraph.types import Interrupt
+from langfuse import Langfuse
+from langfuse.langchain import CallbackHandler
+from langgraph.graph.state import CompiledStateGraph
 
-from app.agent.graph.graph import Graph
 from app.agent.models import Token
 from app.agent.utils.utils import remove_tool_calls, langchain_to_chat_message, convert_message_content_to_string
 from app.http.responses import ChatHistory
@@ -20,9 +21,15 @@ logger = logging.getLogger(__name__)
 
 
 class AgentService:
-    def __init__(self, graph: Graph):
-        self.graph = graph
+    def __init__(self, graph: CompiledStateGraph):
+        self.langfuse = Langfuse(
+            # blocked_instrumentation_scopes=["sqlalchemy", "opentelemetry.instrumentation.fastapi"],
+        )
 
+        self.graph = graph
+        self.callbacks = []
+
+    @staticmethod
     def _create_ai_message(parts: dict) -> AIMessage:
         sig = inspect.signature(AIMessage)
         valid_keys = set(sig.parameters)
@@ -32,99 +39,102 @@ class AgentService:
     async def stream_response(self, message: str, thread: Thread, user: User) -> AsyncGenerator[Dict[str, Any], None]:
         run_id = uuid4()
 
+        self.callbacks.extend([CallbackHandler()])
+
         config = RunnableConfig(
             configurable={
                 "user_id": user.id,
                 "thread_id": thread.id
             },
-            run_id=run_id
+            run_id=run_id,
+            callbacks=self.callbacks
         )
 
         inputs = {"messages": [HumanMessage(content=message)]}
+        with self.langfuse.start_as_current_span(name="invoke-agent", input=message) as rootspan:
+            rootspan.update_trace(session_id=thread.id, user_id=user.id)
+            try:
+                async for stream_event in self.graph.astream(
+                        inputs,
+                        config=config,
+                        stream_mode=["updates", "messages", "custom"]
+                ):
+                    if not isinstance(stream_event, tuple):
+                        continue
+                    stream_mode, event = stream_event
+                    new_messages = []
 
-        try:
-            async for stream_event in self.graph.astream(inputs, config=config,
-                                                         stream_mode=["updates", "messages", "custom"]):
-                logger.debug(f"Chunk: {stream_event}")
+                    if stream_mode == "updates":
+                        for node, updates in event.items():
+                            updates = updates or {}
+                            update_messages = updates.get("messages", [])
+                            new_messages.extend(update_messages)
 
-                if not isinstance(stream_event, tuple):
-                    continue
-                stream_mode, event = stream_event
-                new_messages = []
+                    if stream_mode == "custom":
+                        new_messages = [event]
 
-                if stream_mode == "updates":
-                    for node, updates in event.items():
-                        if node == "__interrupt__":
-                            interrupt: Interrupt
-                            for interrupt in updates:
-                                new_messages.append(AIMessage(content=interrupt.value))
+                    processed_messages = []
+                    current_message: dict[str, Any] = {}
+                    for message in new_messages:
+                        if isinstance(message, tuple):
+                            key, value = message
+                            current_message[key] = value
+                        else:
+                            if current_message:
+                                processed_messages.append(self._create_ai_message(current_message))
+                                current_message = {}
+                            processed_messages.append(message)
+
+                    if current_message:
+                        processed_messages.append(self._create_ai_message(current_message))
+
+                    for message in processed_messages:
+                        try:
+                            chat_message = langchain_to_chat_message(message)
+                            chat_message.run_id = str(run_id)
+                        except Exception as e:
+                            logger.error(f"Error parsing message: {e}")
+                            yield {
+                                "event": "error",
+                                "data": json.dumps({"content": "Unexpected error"})
+                            }
                             continue
-                        updates = updates or {}
-                        update_messages = updates.get("messages", [])
-                        new_messages.extend(update_messages)
-
-                if stream_mode == "custom":
-                    new_messages = [event]
-
-                processed_messages = []
-                current_message: dict[str, Any] = {}
-                for message in new_messages:
-                    if isinstance(message, tuple):
-                        key, value = message
-                        current_message[key] = value
-                    else:
-                        if current_message:
-                            processed_messages.append(self._create_ai_message(current_message))
-                            current_message = {}
-                        processed_messages.append(message)
-
-                if current_message:
-                    processed_messages.append(self._create_ai_message(current_message))
-
-                for message in processed_messages:
-                    try:
-                        chat_message = langchain_to_chat_message(message)
-                        chat_message.run_id = str(run_id)
-                    except Exception as e:
-                        logger.error(f"Error parsing message: {e}")
+                        if chat_message.type == "human_message" and chat_message.content == message:
+                            continue
+                        rootspan.update(output=chat_message.model_dump_json())
                         yield {
-                            "event": "error",
-                            "data": json.dumps({"content": "Unexpected error"})
+                            "event": chat_message.type,
+                            "data": chat_message.model_dump_json()
                         }
-                        continue
-                    if chat_message.type == "human_message" and chat_message.content == message:
-                        continue
-                    yield {
-                        "event": chat_message.type,
-                        "data": chat_message.model_dump_json()
-                    }
 
-                if stream_mode == "messages":
-                    msg, metadata = event
-                    if "skip_stream" in metadata.get("tags", []):
-                        continue
-                    if not isinstance(msg, AIMessageChunk):
-                        continue
-                    content = remove_tool_calls(msg.content)
-                    if content:
-                        token = Token(
-                            run_id=str(run_id),
-                            content=convert_message_content_to_string(content),
-                        )
-                        yield {
-                            "event": "token",
-                            "data": token.model_dump_json()
-                        }
-            yield {
-                "event": "stream_end",
-                "data": json.dumps({"run_id": str(run_id), 'status': 'completed'})
-            }
+                    if stream_mode == "messages":
+                        msg, metadata = event
+                        if "skip_stream" in metadata.get("tags", []):
+                            continue
+                        if not isinstance(msg, AIMessageChunk):
+                            continue
+                        content = remove_tool_calls(msg.content)
+                        if content:
+                            token = Token(
+                                run_id=str(run_id),
+                                content=convert_message_content_to_string(content),
+                            )
+                            yield {
+                                "event": "token",
+                                "data": token.model_dump_json()
+                            }
+                yield {
+                    "event": "stream_end",
+                    "data": json.dumps({"run_id": str(run_id), 'status': 'completed'})
+                }
 
-        except Exception as e:
-            yield {
-                "event": "error",
-                "data": json.dumps({'run_id': str(run_id), 'content': str(e)})
-            }
+            except Exception as e:
+                yield {
+                    "event": "error",
+                    "data": json.dumps({'run_id': str(run_id), 'content': str(e)})
+                }
+            logger.debug(f"View trace at: {self.langfuse.get_trace_url()}")
+            self.langfuse.flush()
 
     async def load_history(self, thread: Thread, user: User) -> ChatHistory:
         state_snapshot = self.graph.get_state(

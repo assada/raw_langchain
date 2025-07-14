@@ -44,9 +44,9 @@ def create_app(config: AppConfig) -> FastAPI:
     app.include_router(chat_router, prefix="/api/v1")
     app.include_router(health_router, prefix="/api/v1")
 
-    FastAPIInstrumentor.instrument_app(app)
+    FastAPIInstrumentor.instrument_app(app, excluded_urls="/api/v1/health*,/docs,/metrics,/openapi.json")
     Instrumentator(
-        excluded_handlers=["/docs", "/metrics", "/api/v1/health", "/openapi.json"],
+        excluded_handlers=["/docs", "/metrics", "/api/v1/health*", "/openapi.json"],
     ).instrument(app).expose(app)
 
     try:
