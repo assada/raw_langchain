@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.bootstrap.config import get_config
 from app.http.controllers import ChatController
-from app.http.requests import ChatRequest
+from app.http.requests import ChatRequest, FeedbackRequest
 from app.models import User, Thread
 from app.repositories import UserRepository, ThreadRepository
 
@@ -25,3 +25,12 @@ async def get_chat_history(
         thread: Thread = Depends(ThreadRepository.get_thread_by_id)
 ):
     return await chat_controller.get_chat_history(user, thread)
+
+
+@chat_router.post("/{user_id}/thread/{thread_id}/feedback")
+async def post_chat_feedback(
+        request: FeedbackRequest,
+        user: User = Depends(UserRepository.get_user_by_id),
+        thread: Thread = Depends(ThreadRepository.get_thread_by_id)
+):
+    return await chat_controller.feedback(request, user, thread)

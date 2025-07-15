@@ -1,5 +1,3 @@
-import logging
-
 from langchain.chat_models import init_chat_model
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import (
@@ -16,13 +14,9 @@ from app.agent.models import ToolCall, ToolResult, AIMessage as CustomAIMessage,
     CustomUIMessage
 from app.agent.models.ChatMessage import ChatMessage
 
-logger = logging.getLogger(__name__)
-
 
 def load_chat_model(fully_specified_name: str) -> BaseChatModel:
-    logger.debug(f"Loading chat model: {fully_specified_name}")
     provider, model = fully_specified_name.split("/", maxsplit=1)
-    logger.debug(f"Provider: {provider}, Model: {model}")
     return init_chat_model(model, model_provider=provider)
 
 
@@ -55,7 +49,6 @@ def langchain_to_chat_message(message: BaseMessage) -> ChatMessage:
             return CustomHumanMessage(content=convert_message_content_to_string(message.content))
         case AIMessage():
             if message.tool_calls:
-                logger.debug(f"Tool calls: {message.tool_calls[0]}")
                 return ToolCall(
                     id=message.id,
                     name=message.tool_calls[0]["name"],

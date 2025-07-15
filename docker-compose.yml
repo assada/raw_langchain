@@ -1,9 +1,9 @@
 services:
   db:
     image: pgvector/pgvector:pg16
-    container_name: raw_langchain_db
+    container_name: raw_langgraph
     environment:
-      POSTGRES_DB: raw_langchain
+      POSTGRES_DB: raw_langgraph
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5

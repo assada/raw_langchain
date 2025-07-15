@@ -6,7 +6,7 @@ import UIMessage from './UIMessage.jsx';
 import { CSS_CLASSES, SENDER_TYPES, MESSAGE_SUBTYPES } from '../constants/constants.js';
 
 export const Message = ({ message, showActions = true }) => {
-    const { id, content, sender, messageType, className = '' } = message;
+    const { id, content, sender, messageType, className = '', traceId } = message;
     
     const isUser = sender === SENDER_TYPES.USER;
     const isAssistant = sender === SENDER_TYPES.ASSISTANT;
@@ -29,8 +29,8 @@ export const Message = ({ message, showActions = true }) => {
             ) : (
                 content
             )}
-            {isAssistant && !isCurrentAssistant && isRegularMessage && showActions && (
-                <MessageActions content={content} messageId={id} remarkPlugins={[[remarkGfm, {singleTilde: false}]]} />
+            {isAssistant && !isCurrentAssistant && isRegularMessage && showActions && traceId && (
+                <MessageActions content={content} messageId={id} traceId={traceId} />
             )}
         </div>
     );

@@ -3,6 +3,10 @@ import { SSE } from 'sse.js';
 import { useChatStore } from '../store/index.js';
 import { STATUSES, MESSAGES, SENDER_TYPES, MESSAGE_SUBTYPES, CSS_CLASSES } from '../constants/constants.js';
 
+// TODO: Replace with actual API call to get user_id and thread_id
+const USER_ID = '1437ade37359488e95c0727a1cdf1786d24edce3';
+const THREAD_ID = 'edd5a53c-da04-4db4-84e0-a9f3592eef45';
+
 export const useSSE = () => {
     const sseRef = useRef(null);
     const {
@@ -23,7 +27,7 @@ export const useSSE = () => {
         try {
             const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogMTAzLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
             
-            const response = await fetch('/api/v1/chat/1437ade37359488e95c0727a1cdf1786d24edce3/thread/edd5a53c-da04-4db4-84e0-a9f3592eef45', {
+            const response = await fetch(`/api/v1/chat/${USER_ID}/thread/${THREAD_ID}`, {
                 headers: {
                     'Authorization': 'Bearer ' + authToken
                 }
@@ -77,7 +81,7 @@ export const useSSE = () => {
         if (!data) return;
         
         if (data.content) {
-            setCurrentAssistantMessage(data.content);
+            setCurrentAssistantMessage(data.content, data.trace_id);
         }
     }, [parseEventData, setCurrentAssistantMessage]);
 
@@ -212,7 +216,7 @@ export const useSSE = () => {
         try {
             // TODO: Mocked data, replace with actual API call
             const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogMTAzLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
-            sseRef.current = new SSE('/api/v1/chat/1437ade37359488e95c0727a1cdf1786d24edce3/thread/edd5a53c-da04-4db4-84e0-a9f3592eef45/stream', {
+            sseRef.current = new SSE(`/api/v1/chat/${USER_ID}/thread/${THREAD_ID}/stream`, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + authToken
@@ -252,6 +256,8 @@ export const useSSE = () => {
     return {
         sendMessage,
         closeConnection,
-        loadChatHistory
+        loadChatHistory,
+        getUserId: () => USER_ID,
+        getThreadId: () => THREAD_ID
     };
 }; 

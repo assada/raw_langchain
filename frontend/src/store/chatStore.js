@@ -11,6 +11,7 @@ export const useChatStore = create((set, get) => ({
         message: MESSAGES.READY
     },
     currentAssistantMessage: '',
+    currentAssistantTraceId: null,
     
     setInput: (input) => set({ input }),
     
@@ -21,15 +22,15 @@ export const useChatStore = create((set, get) => ({
     setConnectionStatus: (status, message) => 
         set({ connectionStatus: { status, message } }),
     
-    setCurrentAssistantMessage: (message) => 
-        set({ currentAssistantMessage: message }),
+    setCurrentAssistantMessage: (message, traceId = null) => 
+        set({ currentAssistantMessage: message, currentAssistantTraceId: traceId }),
     
     appendToCurrentAssistantMessage: (content) => 
         set((state) => ({ 
             currentAssistantMessage: state.currentAssistantMessage + content 
         })),
     
-    addMessage: (content, sender = SENDER_TYPES.USER, messageType = MESSAGE_SUBTYPES.MESSAGE, className = '') => 
+    addMessage: (content, sender = SENDER_TYPES.USER, messageType = MESSAGE_SUBTYPES.MESSAGE, className = '', traceId = null) => 
         set((state) => ({
             messages: [...state.messages, {
                 id: Date.now() + Math.random(),
@@ -37,6 +38,7 @@ export const useChatStore = create((set, get) => ({
                 sender,
                 messageType,
                 className,
+                traceId,
                 timestamp: new Date().toISOString()
             }]
         })),
@@ -53,6 +55,7 @@ export const useChatStore = create((set, get) => ({
                         sender: SENDER_TYPES.USER,
                         messageType: MESSAGE_SUBTYPES.MESSAGE,
                         className: '',
+                        traceId: null,
                         timestamp: new Date().toISOString()
                     };
                 case 'ai_message':
@@ -62,6 +65,7 @@ export const useChatStore = create((set, get) => ({
                         sender: SENDER_TYPES.ASSISTANT,
                         messageType: MESSAGE_SUBTYPES.MESSAGE,
                         className: '',
+                        traceId: msg.trace_id || null,
                         timestamp: new Date().toISOString()
                     };
                 case 'tool_call':
@@ -71,6 +75,7 @@ export const useChatStore = create((set, get) => ({
                         sender: SENDER_TYPES.ASSISTANT,
                         messageType: MESSAGE_SUBTYPES.TOOL_CALL,
                         className: CSS_CLASSES.TOOL_CALL,
+                        traceId: null,
                         timestamp: new Date().toISOString()
                     };
                 case 'tool_result':
@@ -80,6 +85,7 @@ export const useChatStore = create((set, get) => ({
                         sender: SENDER_TYPES.ASSISTANT,
                         messageType: MESSAGE_SUBTYPES.TOOL_RESULT,
                         className: CSS_CLASSES.TOOL_CALL,
+                        traceId: null,
                         timestamp: new Date().toISOString()
                     };
                 default:
@@ -89,6 +95,7 @@ export const useChatStore = create((set, get) => ({
                         sender: SENDER_TYPES.SYSTEM,
                         messageType: MESSAGE_SUBTYPES.MESSAGE,
                         className: '',
+                        traceId: null,
                         timestamp: new Date().toISOString()
                     };
             }
@@ -98,7 +105,7 @@ export const useChatStore = create((set, get) => ({
     },
     
     finalizeAssistantMessage: () => {
-        const { currentAssistantMessage } = get();
+        const { currentAssistantMessage, currentAssistantTraceId } = get();
         if (currentAssistantMessage) {
             set((state) => ({
                 messages: [...state.messages, {
@@ -107,16 +114,18 @@ export const useChatStore = create((set, get) => ({
                     sender: SENDER_TYPES.ASSISTANT,
                     messageType: MESSAGE_SUBTYPES.MESSAGE,
                     className: '',
+                    traceId: currentAssistantTraceId,
                     timestamp: new Date().toISOString()
                 }],
-                currentAssistantMessage: ''
+                currentAssistantMessage: '',
+                currentAssistantTraceId: null
             }));
         }
     },
     
     clearInput: () => set({ input: '' }),
     
-    clearCurrentAssistantMessage: () => set({ currentAssistantMessage: '' }),
+    clearCurrentAssistantMessage: () => set({ currentAssistantMessage: '', currentAssistantTraceId: null }),
     
     reset: () => set({
         messages: [],
@@ -127,6 +136,7 @@ export const useChatStore = create((set, get) => ({
             status: STATUSES.DISCONNECTED,
             message: MESSAGES.READY
         },
-        currentAssistantMessage: ''
+        currentAssistantMessage: '',
+        currentAssistantTraceId: null
     })
 })); 

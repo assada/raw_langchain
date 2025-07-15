@@ -19,7 +19,7 @@ class UserRepository:
             if not user:
                 raise HTTPException(status_code=404, detail="User not found")
 
-            logger.info(f"Resolved user: {user.id} - {user.email}")
+            logger.debug(f"Resolved user: {user.id} - {user.email}")
             return user
 
         except ValueError:

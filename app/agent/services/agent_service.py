@@ -23,6 +23,7 @@ logger = logging.getLogger(__name__)
 class AgentService:
     def __init__(self, graph: CompiledStateGraph):
         self.langfuse = Langfuse(
+            debug=False,
             # blocked_instrumentation_scopes=["sqlalchemy", "opentelemetry.instrumentation.fastapi"],
         )
 
@@ -44,15 +45,20 @@ class AgentService:
         config = RunnableConfig(
             configurable={
                 "user_id": user.id,
-                "thread_id": thread.id
+                "thread_id": thread.id,
             },
             run_id=run_id,
             callbacks=self.callbacks
         )
 
-        inputs = {"messages": [HumanMessage(content=message)]}
-        with self.langfuse.start_as_current_span(name="invoke-agent", input=message) as rootspan:
+        with self.langfuse.start_as_current_span(
+                name="invoke-agent",
+                input=message
+        ) as rootspan:
             rootspan.update_trace(session_id=thread.id, user_id=user.id)
+
+            inputs = {"messages": [HumanMessage(content=message)]}
+
             try:
                 async for stream_event in self.graph.astream(
                         inputs,
@@ -101,6 +107,7 @@ class AgentService:
                             continue
                         if chat_message.type == "human_message" and chat_message.content == message:
                             continue
+                        chat_message.trace_id = rootspan.trace_id
                         rootspan.update(output=chat_message.model_dump_json())
                         yield {
                             "event": chat_message.type,
@@ -137,7 +144,7 @@ class AgentService:
             self.langfuse.flush()
 
     async def load_history(self, thread: Thread, user: User) -> ChatHistory:
-        state_snapshot = self.graph.get_state(
+        state_snapshot = await self.graph.aget_state(
             config=RunnableConfig(configurable={"thread_id": thread.id, "user_id": user.id}),
         )
 
@@ -147,3 +154,17 @@ class AgentService:
         messages: list[AnyMessage] = state_snapshot.values["messages"]
         chat_messages: list[Any] = [langchain_to_chat_message(m) for m in messages]
         return ChatHistory(messages=chat_messages)
+
+    async def add_feedback(self, trace: str, feedback: float, thread: Thread, user: User) -> Dict[str, str]:
+        """TODO: Need to figure out how to pass trace_id from history!!."""
+        try:
+            self.langfuse.create_score(
+                trace_id=trace,
+                name="user_feedback",
+                value=feedback,
+                data_type="NUMERIC"
+            )
+            return {"status": "success", "message": "Feedback recorded successfully."}
+        except Exception as e:
+            logger.error(f"Error recording feedback: {e}")
+            return {"status": "error", "message": "Failed to record feedback."}

@@ -13,6 +13,7 @@ export const ChatApp = () => {
         isSending,
         connectionStatus,
         currentAssistantMessage,
+        currentAssistantTraceId,
         setInput,
         addMessage,
         clearInput
@@ -76,7 +77,8 @@ export const ChatApp = () => {
                             content: currentAssistantMessage,
                             sender: SENDER_TYPES.ASSISTANT,
                             messageType: MESSAGE_SUBTYPES.MESSAGE,
-                            className: isSending ? 'typing-cursor' : ''
+                            className: isSending ? 'typing-cursor' : '',
+                            traceId: currentAssistantTraceId
                         }}
                     />
                 )}

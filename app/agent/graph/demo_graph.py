@@ -3,8 +3,8 @@ from datetime import UTC, datetime
 from typing import Dict, List, Literal, cast
 
 from langchain_core.messages import AIMessage
-from langgraph.checkpoint.memory import InMemorySaver
 from langgraph.graph import START, END, StateGraph
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 
 from app.agent.graph.graph import Graph
@@ -17,16 +17,15 @@ logger = logging.getLogger(__name__)
 
 
 class DemoGraph(Graph):
-
-    def __init__(self, config: AppConfig):
+    def __init__(self, config: AppConfig, checkpointer):
         self.config = config
+        self.checkpointer = checkpointer
 
-    def build_graph(self):
+    def build_graph(self) -> CompiledStateGraph:
         """Build the StateGraph for the agent."""
 
         async def call_model(state: State) -> Dict[str, List[AIMessage]]:
             """Call the LLM powering our agent."""
-            logger.debug("Calling the model for the agent.")
             model = load_chat_model(self.config.agent_model).bind_tools(TOOLS)
 
             system_message = self.config.agent_prompt.format(
@@ -39,8 +38,6 @@ class DemoGraph(Graph):
                     [{"role": "system", "content": system_message}, *state.messages]
                 ),
             )
-
-            logger.debug(f"Response from the model: {response}")
 
             if state.is_last_step and response.tool_calls:
                 return {
@@ -74,5 +71,4 @@ class DemoGraph(Graph):
         builder.add_conditional_edges("call_model", route_model_output)
         builder.add_edge("tools", "call_model")
 
-        checkpointer = InMemorySaver()
-        return builder.compile(checkpointer=checkpointer)
+        return builder.compile(checkpointer=self.checkpointer)

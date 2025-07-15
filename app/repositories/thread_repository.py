@@ -19,7 +19,7 @@ class ThreadRepository:
             if not thread:
                 raise HTTPException(status_code=404, detail="Thread not found")
 
-            logger.info(f"Resolved thread: {thread.id}")
+            logger.debug(f"Resolved thread: {thread.id}")
             return thread
 
         except ValueError:
