@@ -36,3 +36,5 @@
 - [ ] Add a way to define a custom agent in config?
 - [x] Add Langfuse integration
 - [ ] ~~Add Langsmith integration~~
+- [ ] Add tests
+- [ ] Add evaluation metrics
