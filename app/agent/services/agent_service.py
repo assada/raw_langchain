@@ -27,7 +27,7 @@ class AgentService:
         )
 
         self.graph = graph
-        self.stream_processor = StreamProcessor(self.langfuse)
+        self.stream_processor = StreamProcessor()
 
     async def stream_response(self, message: str, thread: Thread, user: User) -> AsyncGenerator[Dict[str, Any], None]:
         with self.langfuse.start_as_current_span(name=self.graph.name) as span:
