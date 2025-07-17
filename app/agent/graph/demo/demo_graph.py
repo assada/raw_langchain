@@ -24,19 +24,21 @@ class DemoGraph(Graph):
     def __init__(self, checkpointer: BaseCheckpointSaver, langfuse: Langfuse):
         self._checkpointer = checkpointer
         self._langfuse = langfuse
+        self.graph_name = "demo_graph"
 
     def build_graph(self) -> CompiledStateGraph:
         """Build the StateGraph for the agent."""
 
         async def call_model(state: State, config: RunnableConfig) -> Dict[str, List[AIMessage]]:
             langfuse_prompt = self._langfuse.get_prompt(
-                "demo_graph",
+                self.graph_name,
                 label="production",
                 fallback="You are a helpful assistant."
             )
 
             model = load_chat_model(
-                langfuse_prompt.config.get("model", "openai/4o-mini")
+                langfuse_prompt.config.get("model", "openai/4o-mini"),
+                temperature=langfuse_prompt.config.get("temperature", 1)
             ).bind_tools(TOOLS)
 
             prompt = (
@@ -92,4 +94,4 @@ class DemoGraph(Graph):
         builder.add_conditional_edges("call_model", route_model_output)
         builder.add_edge("tools", "call_model")
 
-        return builder.compile(checkpointer=self._checkpointer, name="demo_graph")
+        return builder.compile(checkpointer=self._checkpointer, name=self.graph_name)
