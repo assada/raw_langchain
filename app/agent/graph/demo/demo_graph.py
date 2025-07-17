@@ -3,11 +3,13 @@ from datetime import UTC, datetime
 from typing import Dict, List, Literal, cast
 
 from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.runnables import RunnableConfig
 from langgraph.graph import START, END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 
-from app.agent.graph.demo.state import InputState, State
+from app.agent.graph.base_state import BaseState
+from app.agent.graph.demo.state import State
 from app.agent.graph.demo.tools.tools import TOOLS
 from app.agent.graph.graph import Graph
 from app.agent.utils.utils import load_chat_model
@@ -24,7 +26,7 @@ class DemoGraph(Graph):
     def build_graph(self) -> CompiledStateGraph:
         """Build the StateGraph for the agent."""
 
-        async def call_model(state: State) -> Dict[str, List[AIMessage]]:
+        async def call_model(state: State, config: RunnableConfig) -> Dict[str, List[AIMessage]]:
             """Call the LLM powering our agent."""
             model = load_chat_model(self.config.agent_model).bind_tools(TOOLS)
 
@@ -35,7 +37,8 @@ class DemoGraph(Graph):
             response = cast(
                 AIMessage,
                 await model.ainvoke(
-                    [SystemMessage(content=system_message), *state.messages]
+                    input=[SystemMessage(content=system_message), *state.messages],
+                    config=config
                 ),
             )
 
@@ -62,7 +65,7 @@ class DemoGraph(Graph):
                 return END
             return "tools"
 
-        builder = StateGraph(State, input=InputState)
+        builder = StateGraph(State, input=BaseState)
 
         builder.add_node("call_model", call_model)
         builder.add_node("tools", ToolNode(TOOLS))

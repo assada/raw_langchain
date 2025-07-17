@@ -3,7 +3,7 @@ from uuid import uuid4
 from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+#from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.http.middleware.auth_middleware import AuthMiddleware
@@ -44,7 +44,7 @@ def create_app(config: AppConfig) -> FastAPI:
     app.include_router(chat_router, prefix="/api/v1")
     app.include_router(health_router, prefix="/api/v1")
 
-    FastAPIInstrumentor.instrument_app(app, excluded_urls="/api/v1/health*,/docs,/metrics,/openapi.json")
+    # FastAPIInstrumentor.instrument_app(app, excluded_urls="/api/v1/health*,/docs,/metrics,/openapi.json")
     Instrumentator(
         excluded_handlers=["/docs", "/metrics", "/api/v1/health*", "/openapi.json"],
     ).instrument(app).expose(app)

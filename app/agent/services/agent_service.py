@@ -27,39 +27,47 @@ class AgentService:
         )
 
         self.graph = graph
-        self.callbacks = []
-        self.stream_processor = StreamProcessor()
+        self.stream_processor = StreamProcessor(self.langfuse)
 
     async def stream_response(self, message: str, thread: Thread, user: User) -> AsyncGenerator[Dict[str, Any], None]:
-        run_id = uuid4()
+        with self.langfuse.start_as_current_span(name=self.graph.name) as span:
+            run_id = uuid4()
 
-        self.callbacks.extend([CallbackHandler()])
+            inputs = {
+                "messages": [HumanMessage(content=message)],
+            }
 
-        config = RunnableConfig(
-            configurable={
-                "user_id": user.id,
-                "thread_id": thread.id,
-            },
-            run_id=run_id,
-            callbacks=self.callbacks
-        )
-
-        inputs = {"messages": [HumanMessage(content=message)]}
-
-        try:
-            stream = self.graph.astream(
-                inputs,
-                config=config,
-                stream_mode=["updates", "messages", "custom"]
+            config = RunnableConfig(
+                configurable={
+                    "thread_id": thread.id,
+                    "user_id": user.id,
+                },
+                metadata={
+                    "langfuse_session_id": str(thread.id),
+                    "langfuse_user_id": str(user.id),
+                    "langfuse_tags": ["production", "chat-bot"],
+                },
+                run_id=run_id,
+                callbacks=[CallbackHandler()],
             )
-            async for event in self.stream_processor.process_stream(stream, run_id):
-                yield event.model_dump()
-        except Exception as e:
-            yield ErrorEvent(
-                data=json.dumps({'run_id': str(run_id), 'content': str(e)})
-            ).model_dump()
+
+            try:
+                stream = self.graph.astream(
+                    inputs,
+                    stream_mode=["updates", "messages", "custom"],
+                    config=config
+                )
+                async for event in self.stream_processor.process_stream(stream, run_id, span):
+                    yield event.model_dump()
+            except Exception as e:
+                yield ErrorEvent(
+                    data=json.dumps({'run_id': str(run_id), 'content': str(e)})
+                ).model_dump()
 
     async def load_history(self, thread: Thread, user: User) -> ChatHistory:
+        """Load chat history for a given thread and user. This is only for demo purposes.
+        In production, you would typically fetch this from a database from a separate custom hostory table.
+        """
         state_snapshot = await self.graph.aget_state(
             config=RunnableConfig(configurable={"thread_id": thread.id, "user_id": user.id}),
         )

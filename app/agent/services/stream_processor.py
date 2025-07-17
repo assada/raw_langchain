@@ -5,6 +5,7 @@ from typing import Any, AsyncGenerator
 from uuid import UUID
 
 from langchain_core.messages import AIMessage, AIMessageChunk
+from langfuse._client.span import LangfuseSpan
 
 from app.agent.models import Token
 from app.agent.services.events import TokenEvent, ErrorEvent, EndEvent
@@ -38,7 +39,7 @@ class StreamProcessor:
     def _process_custom_stream(event: Any) -> list[Any]:
         return [event]
 
-    def _process_messages_for_chat(self, messages: list[Any], run_id: UUID) -> list[BaseEvent]:
+    def _process_messages_for_chat(self, messages: list[Any], run_id: UUID, span: LangfuseSpan = None) -> list[BaseEvent]:
         processed_messages = []
         current_message: dict[str, Any] = {}
 
@@ -66,7 +67,9 @@ class StreamProcessor:
                         and hasattr(message, 'content') and chat_message.content == message.content
                 ):
                     continue
-
+                if span is not None:
+                    if chat_message.type == "ai_message":
+                        chat_message.trace_id = span.id
                 events.append(BaseEvent(
                     event=chat_message.type,
                     data=chat_message.model_dump_json(),
@@ -97,7 +100,10 @@ class StreamProcessor:
         )
         return TokenEvent(data=token.model_dump_json())
 
-    async def process_stream(self, stream, run_id: UUID) -> AsyncGenerator[BaseEvent, None]:
+    async def process_stream(self, stream, run_id: UUID, span: LangfuseSpan = None) -> AsyncGenerator[BaseEvent, None]:
+        """TODO: I am not sure about direct passing Span.
+        Maybe we can just use Langfuse client directly to get current span.
+        """
         async for stream_event in stream:
             if not isinstance(stream_event, tuple):
                 continue
@@ -107,14 +113,14 @@ class StreamProcessor:
             if stream_mode == "updates":
                 new_messages = self._process_updates_stream(event)
                 if new_messages:
-                    events = self._process_messages_for_chat(new_messages, run_id)
+                    events = self._process_messages_for_chat(new_messages, run_id, span)
                     for chat_event in events:
                         yield chat_event
 
             elif stream_mode == "custom":
                 new_messages = self._process_custom_stream(event)
                 if new_messages:
-                    events = self._process_messages_for_chat(new_messages, run_id)
+                    events = self._process_messages_for_chat(new_messages, run_id, span)
                     for chat_event in events:
                         yield chat_event
 

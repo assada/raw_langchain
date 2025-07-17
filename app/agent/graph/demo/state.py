@@ -1,23 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Sequence
 
-from langchain_core.messages import AnyMessage
-from langgraph.graph import add_messages
 from langgraph.managed import IsLastStep
-from typing_extensions import Annotated
+
+from app.agent.graph.base_state import BaseState
 
 
 @dataclass
-class InputState:
-    messages: Annotated[Sequence[AnyMessage], add_messages] = field(
-        default_factory=list
-    )
-
-
-@dataclass
-class State(InputState):
+class State(BaseState):
     is_last_step: IsLastStep = field(default=False)
 
     # retrieved_documents: List[Document] = field(default_factory=list)
