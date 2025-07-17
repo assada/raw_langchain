@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic import Field
 
-from app.agent.models.ChatMessage import ChatMessage
+from .chat_message import ChatMessage
 
 
 class CustomUIMessage(ChatMessage):

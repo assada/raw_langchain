@@ -12,7 +12,7 @@ from langchain_core.messages import (
 
 from app.agent.models import ToolCall, ToolResult, AIMessage as CustomAIMessage, HumanMessage as CustomHumanMessage, \
     CustomUIMessage
-from app.agent.models.ChatMessage import ChatMessage
+from app.agent.models import ChatMessage
 
 
 def load_chat_model(fully_specified_name: str) -> BaseChatModel:

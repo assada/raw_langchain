@@ -2,7 +2,7 @@ import logging
 from datetime import UTC, datetime
 from typing import Dict, List, Literal, cast
 
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, SystemMessage
 from langgraph.graph import START, END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
@@ -35,7 +35,7 @@ class DemoGraph(Graph):
             response = cast(
                 AIMessage,
                 await model.ainvoke(
-                    [{"role": "system", "content": system_message}, *state.messages]
+                    [SystemMessage(content=system_message), *state.messages]
                 ),
             )
 
@@ -71,4 +71,4 @@ class DemoGraph(Graph):
         builder.add_conditional_edges("call_model", route_model_output)
         builder.add_edge("tools", "call_model")
 
-        return builder.compile(checkpointer=self.checkpointer)
+        return builder.compile(checkpointer=self.checkpointer, name="demo_graph")
