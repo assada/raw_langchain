@@ -8,9 +8,12 @@ from langgraph.graph import add_messages
 from langgraph.managed import IsLastStep
 from typing_extensions import Annotated
 
+from app.agent.models import ModelConfig
+
 
 @dataclass
 class InputState:
+    model_config: ModelConfig
     messages: Annotated[Sequence[AnyMessage], add_messages] = field(
         default_factory=list
     )

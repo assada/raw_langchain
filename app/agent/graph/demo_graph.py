@@ -1,5 +1,5 @@
 import logging
-from datetime import UTC, datetime
+from datetime import datetime, UTC
 from typing import Dict, List, Literal, cast
 
 from langchain_core.messages import AIMessage
@@ -11,14 +11,12 @@ from app.agent.graph.graph import Graph
 from app.agent.state import InputState, State
 from app.agent.tools.tools import TOOLS
 from app.agent.utils.utils import load_chat_model
-from app.bootstrap.config import AppConfig
 
 logger = logging.getLogger(__name__)
 
 
 class DemoGraph(Graph):
-    def __init__(self, config: AppConfig, checkpointer):
-        self.config = config
+    def __init__(self, checkpointer):
         self.checkpointer = checkpointer
 
     def build_graph(self) -> CompiledStateGraph:
@@ -26,16 +24,16 @@ class DemoGraph(Graph):
 
         async def call_model(state: State) -> Dict[str, List[AIMessage]]:
             """Call the LLM powering our agent."""
-            model = load_chat_model(self.config.agent_model).bind_tools(TOOLS)
+            model = load_chat_model(state.model_config).bind_tools(TOOLS)
 
-            system_message = self.config.agent_prompt.format(
-                system_time=datetime.now(tz=UTC).isoformat()
-            )
+            formatted_messages = [m.format(
+                system_time=datetime.now(tz=UTC).isoformat(),
+            ) for m in state.model_config.prompt.messages]
 
             response = cast(
                 AIMessage,
                 await model.ainvoke(
-                    [{"role": "system", "content": system_message}, *state.messages]
+                    [*formatted_messages, *state.messages],
                 ),
             )
 
@@ -71,4 +69,4 @@ class DemoGraph(Graph):
         builder.add_conditional_edges("call_model", route_model_output)
         builder.add_edge("tools", "call_model")
 
-        return builder.compile(checkpointer=self.checkpointer)
+        return builder.compile(checkpointer=self.checkpointer, name="demo-graph")

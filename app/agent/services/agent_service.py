@@ -7,12 +7,13 @@ from uuid import uuid4
 
 from langchain_core.messages import AnyMessage
 from langchain_core.messages import HumanMessage, AIMessage, AIMessageChunk
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableConfig
 from langfuse import Langfuse
-from langfuse.langchain import CallbackHandler
+from langfuse.langchain import CallbackHandler as LangfuseCallbackHandler
 from langgraph.graph.state import CompiledStateGraph
 
-from app.agent.models import Token
+from app.agent.models import Token, ModelConfig
 from app.agent.utils.utils import remove_tool_calls, langchain_to_chat_message, convert_message_content_to_string
 from app.http.responses import ChatHistory
 from app.models import User, Thread
@@ -26,9 +27,8 @@ class AgentService:
             debug=False,
             # blocked_instrumentation_scopes=["sqlalchemy", "opentelemetry.instrumentation.fastapi"],
         )
-
-        self.graph = graph
-        self.callbacks = []
+        self._graph = graph
+        self._callbacks = [LangfuseCallbackHandler()]
 
     @staticmethod
     def _create_ai_message(parts: dict) -> AIMessage:
@@ -40,27 +40,38 @@ class AgentService:
     async def stream_response(self, message: str, thread: Thread, user: User) -> AsyncGenerator[Dict[str, Any], None]:
         run_id = uuid4()
 
-        self.callbacks.extend([CallbackHandler()])
-
         config = RunnableConfig(
             configurable={
                 "user_id": user.id,
                 "thread_id": thread.id,
             },
             run_id=run_id,
-            callbacks=self.callbacks
+            callbacks=self._callbacks,
         )
 
-        with self.langfuse.start_as_current_span(
-                name="invoke-agent",
-                input=message
+        langfuse_prompt = self.langfuse.get_prompt(name=self._graph.name, type="chat", label="production")
+
+        model_config = ModelConfig(
+            prompt=ChatPromptTemplate.from_messages(
+                langfuse_prompt.get_langchain_prompt()
+            ),
+            model=langfuse_prompt.config.get("model", "openai/4o-mini"),
+            temperature=langfuse_prompt.config.get("temperature", 1.0),
+            max_tokens=langfuse_prompt.config.get("max_tokens", 4096),
+        )
+
+        with self.langfuse.start_as_current_generation(
+                name=self._graph.name,
+                input=message,
+                model=model_config.model,
+                prompt=langfuse_prompt
         ) as rootspan:
             rootspan.update_trace(session_id=thread.id, user_id=user.id)
 
-            inputs = {"messages": [HumanMessage(content=message)]}
+            inputs = {"messages": [HumanMessage(content=message)], "model_config": model_config}
 
             try:
-                async for stream_event in self.graph.astream(
+                async for stream_event in self._graph.astream(
                         inputs,
                         config=config,
                         stream_mode=["updates", "messages", "custom"]
@@ -136,6 +147,9 @@ class AgentService:
                 }
 
             except Exception as e:
+                import traceback
+                logger.error(f"Error during streaming: {e}")
+                logger.error(traceback.format_exc())
                 yield {
                     "event": "error",
                     "data": json.dumps({'run_id': str(run_id), 'content': str(e)})
@@ -144,7 +158,7 @@ class AgentService:
             self.langfuse.flush()
 
     async def load_history(self, thread: Thread, user: User) -> ChatHistory:
-        state_snapshot = await self.graph.aget_state(
+        state_snapshot = await self._graph.aget_state(
             config=RunnableConfig(configurable={"thread_id": thread.id, "user_id": user.id}),
         )
 

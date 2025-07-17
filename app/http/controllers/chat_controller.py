@@ -16,7 +16,6 @@ logger = logging.getLogger(__name__)
 
 class ChatController:
     def __init__(self, config: AppConfig):
-        self.config = config
         self.checkpointer_provider = CheckpointFactory.create_provider(config)
         self._graph = None
         self._agent_service = None
@@ -25,7 +24,7 @@ class ChatController:
         if self._graph is None:
             await self.checkpointer_provider.initialize()
             checkpointer = await self.checkpointer_provider.get_checkpointer()
-            self._graph = DemoGraph(self.config, checkpointer).build_graph()
+            self._graph = DemoGraph(checkpointer).build_graph()
             self._agent_service = AgentService(self._graph)
 
     async def stream_chat(

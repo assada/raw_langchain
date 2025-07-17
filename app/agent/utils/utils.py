@@ -11,12 +11,12 @@ from langchain_core.messages import (
 )
 
 from app.agent.models import ToolCall, ToolResult, AIMessage as CustomAIMessage, HumanMessage as CustomHumanMessage, \
-    CustomUIMessage
-from app.agent.models.ChatMessage import ChatMessage
+    CustomUIMessage, ModelConfig
+from app.agent.models import ChatMessage
 
 
-def load_chat_model(fully_specified_name: str) -> BaseChatModel:
-    provider, model = fully_specified_name.split("/", maxsplit=1)
+def load_chat_model(model_config: ModelConfig) -> BaseChatModel:
+    provider, model = model_config.model.split("/", maxsplit=1)
     return init_chat_model(model, model_provider=provider)
 
 

@@ -1,6 +1,8 @@
 from .ai_message import AIMessage
+from .chat_message import ChatMessage
 from .custom_ui_message import CustomUIMessage
 from .human_message import HumanMessage
+from .model_config import ModelConfig
 from .token import Token
 from .tool_call import ToolCall
 from .tool_result import ToolResult
@@ -11,5 +13,7 @@ __all__ = [
     "ToolResult",
     "HumanMessage",
     "CustomUIMessage",
-    "Token"
+    "Token",
+    "ChatMessage",
+    "ModelConfig"
 ]
