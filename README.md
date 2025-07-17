@@ -2,8 +2,8 @@
 
 1. Clone
 2. `cp .env.dist .env` and fill in the required environment variables
-2. `docker compose up`
-3. Open your browser and go to `http://localhost:8000`
+3. `docker compose up`
+4. Open your browser and go to `http://localhost:8000`
 
 ### Setup local langfuse (https://langfuse.com/self-hosting/docker-compose)
 
@@ -29,7 +29,7 @@
 - [ ] 	~~Keep alive SSE connection until the user closes the browser tab (??)~~
 - [ ] Add a way to validate the user's access token (OAuth2)
 - [x] Refactor the structure of the project. We need to separate general fastapi app from the agent app.
-- [ ] Add more model configuration options (temperature, top_p, etc)
+- [x] Add more model configuration options (temperature, top_p, etc)
 - [x] Add a way to get a thread history
 - [ ] Store the thread history in the database (with all custom messages and metadata)
 - [ ] Normalize FastApi headers/request/middleware
@@ -38,3 +38,6 @@
 - [ ] ~~Add Langsmith integration~~
 - [ ] Add tests
 - [ ] Add evaluation metrics
+- [ ] Add *one more* abstraction layer so the agent can use different frameworks (LangGraph, LlamaIndex, etc.)
+- [ ] Add even more fucking abstractions to make it independent of observability tools (LangFuse, LangSmith, Grafana Alloy, or whatever the fuck else)
+- [ ] Long-Term memory for each user. I want to add to chat application for real-time per thread prompt tuning - memory insights, response strategies, etc. But this is more about agent implementation not template core. Graph node as "addon package?" LOL! https://i.imgur.com/k1jk3cx.png here we go again!
