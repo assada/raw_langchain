@@ -7,9 +7,9 @@ from langgraph.graph import START, END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 
+from app.agent.graph.demo.state import InputState, State
+from app.agent.graph.demo.tools.tools import TOOLS
 from app.agent.graph.graph import Graph
-from app.agent.state import InputState, State
-from app.agent.tools.tools import TOOLS
 from app.agent.utils.utils import load_chat_model
 from app.bootstrap.config import AppConfig
 

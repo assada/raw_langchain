@@ -4,7 +4,7 @@ from fastapi import HTTPException, Depends
 from sse_starlette.sse import EventSourceResponse
 
 from app.agent.checkpoint import CheckpointFactory
-from app.agent.graph.demo_graph import DemoGraph
+from app.agent.graph.demo.demo_graph import DemoGraph
 from app.agent.services import AgentService
 from app.bootstrap.config import AppConfig
 from app.http.requests import ChatRequest, FeedbackRequest
