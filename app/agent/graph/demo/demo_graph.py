@@ -2,8 +2,11 @@ import logging
 from datetime import UTC, datetime
 from typing import Dict, List, Literal, cast
 
-from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.messages import AIMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig
+from langfuse import Langfuse
+from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import START, END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
@@ -13,32 +16,47 @@ from app.agent.graph.demo.state import State
 from app.agent.graph.demo.tools.tools import TOOLS
 from app.agent.graph.graph import Graph
 from app.agent.utils.utils import load_chat_model
-from app.bootstrap.config import AppConfig
 
 logger = logging.getLogger(__name__)
 
 
 class DemoGraph(Graph):
-    def __init__(self, config: AppConfig, checkpointer):
-        self.config = config
-        self.checkpointer = checkpointer
+    def __init__(self, checkpointer: BaseCheckpointSaver, langfuse: Langfuse):
+        self._checkpointer = checkpointer
+        self._langfuse = langfuse
 
     def build_graph(self) -> CompiledStateGraph:
         """Build the StateGraph for the agent."""
 
         async def call_model(state: State, config: RunnableConfig) -> Dict[str, List[AIMessage]]:
-            """Call the LLM powering our agent."""
-            model = load_chat_model(self.config.agent_model).bind_tools(TOOLS)
-
-            system_message = self.config.agent_prompt.format(
-                system_time=datetime.now(tz=UTC).isoformat()
+            langfuse_prompt = self._langfuse.get_prompt(
+                "demo_graph",
+                label="production",
+                fallback="You are a helpful assistant."
             )
+
+            model = load_chat_model(
+                langfuse_prompt.config.get("model", "openai/4o-mini")
+            ).bind_tools(TOOLS)
+
+            prompt = (
+                ChatPromptTemplate.from_messages(
+                    [
+                        ("system", langfuse_prompt.get_langchain_prompt()),
+                        MessagesPlaceholder("history"),
+                    ]
+                )
+                .partial(system_time=datetime.now(tz=UTC).isoformat())
+            )
+            prompt.metadata = {"langfuse_prompt": langfuse_prompt}
+
+            chain = prompt | model
 
             response = cast(
                 AIMessage,
-                await model.ainvoke(
-                    input=[SystemMessage(content=system_message), *state.messages],
-                    config=config
+                await chain.ainvoke(
+                    {"history": state.messages},
+                    config=config,
                 ),
             )
 
@@ -74,4 +92,4 @@ class DemoGraph(Graph):
         builder.add_conditional_edges("call_model", route_model_output)
         builder.add_edge("tools", "call_model")
 
-        return builder.compile(checkpointer=self.checkpointer, name="demo_graph")
+        return builder.compile(checkpointer=self._checkpointer, name="demo_graph")

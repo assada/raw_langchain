@@ -20,12 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 class AgentService:
-    def __init__(self, graph: CompiledStateGraph):
-        self.langfuse = Langfuse(
-            debug=False,
-            # blocked_instrumentation_scopes=["sqlalchemy", "opentelemetry.instrumentation.fastapi"],
-        )
-
+    def __init__(self, graph: CompiledStateGraph, langfuse: Langfuse):
+        self.langfuse = langfuse
         self.graph = graph
         self.stream_processor = StreamProcessor()
 

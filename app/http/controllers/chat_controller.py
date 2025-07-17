@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import HTTPException, Depends
+from langfuse import Langfuse
 from sse_starlette.sse import EventSourceResponse
 
 from app.agent.checkpoint import CheckpointFactory
@@ -20,13 +21,18 @@ class ChatController:
         self.checkpointer_provider = CheckpointFactory.create_provider(config)
         self._graph = None
         self._agent_service = None
+        self._langfuse = None
 
     async def _initialize(self):
         if self._graph is None:
+            self._langfuse = Langfuse(
+                debug=False,
+                # blocked_instrumentation_scopes=["sqlalchemy", "opentelemetry.instrumentation.fastapi"],
+            )
             await self.checkpointer_provider.initialize()
             checkpointer = await self.checkpointer_provider.get_checkpointer()
-            self._graph = DemoGraph(self.config, checkpointer).build_graph()
-            self._agent_service = AgentService(self._graph)
+            self._graph = DemoGraph(checkpointer, self._langfuse).build_graph()
+            self._agent_service = AgentService(self._graph, self._langfuse)
 
     async def stream_chat(
             self,

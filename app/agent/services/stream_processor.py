@@ -69,7 +69,7 @@ class StreamProcessor:
                     continue
                 if span is not None:
                     if chat_message.type == "ai_message":
-                        chat_message.trace_id = span.id
+                        chat_message.trace_id = span.trace_id
                 events.append(BaseEvent(
                     event=chat_message.type,
                     data=chat_message.model_dump_json(),
