@@ -72,7 +72,13 @@ class DemoGraph(Graph):
                     ]
                 }
 
-            return {"messages": [response]}
+            return {
+                "messages": [response],
+                "message_trace_map": [*state.message_trace_map, {
+                    "id": response.id,
+                    "trace_id": self._langfuse.get_current_trace_id(),
+                }]
+            }
 
         def route_model_output(state: State) -> Literal[END, "tools"]:
             """Determine the next node based on the model's output."""

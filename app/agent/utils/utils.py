@@ -43,7 +43,7 @@ def convert_message_content_to_string(content: str | list[str | dict]) -> str:
     return "".join(text)
 
 
-def langchain_to_chat_message(message: BaseMessage) -> ChatMessage:
+def langchain_to_chat_message(message: BaseMessage, trace_id: str | None = None) -> ChatMessage:
     match message:
         case HumanMessage():
             return CustomHumanMessage(content=convert_message_content_to_string(message.content))
@@ -54,7 +54,9 @@ def langchain_to_chat_message(message: BaseMessage) -> ChatMessage:
                     name=message.tool_calls[0]["name"],
                     args=message.tool_calls[0]["args"],
                 )
-            return CustomAIMessage(content=convert_message_content_to_string(message.content))
+            message = CustomAIMessage(content=convert_message_content_to_string(message.content))
+            message.trace_id = trace_id
+            return message
         case ToolMessage():
             return ToolResult(
                 tool_name=message.name,

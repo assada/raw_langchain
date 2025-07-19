@@ -39,7 +39,8 @@ class StreamProcessor:
     def _process_custom_stream(event: Any) -> list[Any]:
         return [event]
 
-    def _process_messages_for_chat(self, messages: list[Any], run_id: UUID, span: LangfuseSpan = None) -> list[BaseEvent]:
+    def _process_messages_for_chat(self, messages: list[Any], run_id: UUID, span: LangfuseSpan = None) -> list[
+        BaseEvent]:
         processed_messages = []
         current_message: dict[str, Any] = {}
 
@@ -70,9 +71,10 @@ class StreamProcessor:
                 if span is not None:
                     if chat_message.type == "ai_message":
                         chat_message.trace_id = span.trace_id
-                events.append(BaseEvent(
+                events.append(BaseEvent.from_payload(
                     event=chat_message.type,
-                    data=chat_message.model_dump_json(),
+                    payload=chat_message.model_dump(),
+                    source="stream"
                 ))
             except Exception as e:
                 logger.error(f"Error parsing message: {e}")

@@ -30,29 +30,74 @@ export const useSSE = () => {
         setLoading(true);
         
         try {
+            if (sseRef.current) {
+                sseRef.current.close();
+            }
+
             const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogMTAzLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
-            
-            const response = await fetch(`/api/v1/chat/${USER_ID}/thread/${THREAD_ID}`, {
+
+            const historicalMessages = [];
+            sseRef.current = new SSE(`/api/v1/chat/${USER_ID}/thread/${THREAD_ID}`, {
                 headers: {
                     'Authorization': 'Bearer ' + authToken
+                },
+                autoReconnect: false,
+                start: false
+            });
+
+            const handleHistoryMessage = (e) => {
+                const data = parseEventData(e);
+                if (!data) return;
+                historicalMessages.push(data);
+            };
+
+            const handleHistoryOpen = () => {
+                console.log('History SSE connection opened');
+            };
+
+            const handleHistoryError = (e) => {
+                console.error('History SSE Error:', e);
+                const errorMessage = extractErrorMessage(e);
+                addMessage(errorMessage, SENDER_TYPES.SYSTEM, MESSAGE_SUBTYPES.ERROR, CSS_CLASSES.ERROR);
+                setLoading(false);
+            };
+
+            const handleHistoryEnd = () => {
+                console.log('History loading completed');
+
+                if (historicalMessages.length > 0) {
+                    loadHistory(historicalMessages);
+                }
+                
+                setLoading(false);
+                if (sseRef.current) {
+                    sseRef.current.close();
+                    sseRef.current = null;
+                }
+            };
+
+            sseRef.current.addEventListener('open', handleHistoryOpen);
+            sseRef.current.addEventListener('ai_message', handleHistoryMessage);
+            sseRef.current.addEventListener('human_message', handleHistoryMessage);
+            sseRef.current.addEventListener('ui', handleHistoryMessage);
+            sseRef.current.addEventListener('tool_call', handleHistoryMessage);
+            sseRef.current.addEventListener('tool_result', handleHistoryMessage);
+            sseRef.current.addEventListener('error', handleHistoryError);
+            sseRef.current.addEventListener('stream_end', handleHistoryEnd);
+            sseRef.current.addEventListener('readystatechange', (e) => {
+                if (e.readyState === 2) {
+                    setLoading(false);
                 }
             });
-            
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            if (data.messages && Array.isArray(data.messages)) {
-                loadHistory(data.messages);
-            }
+
+            sseRef.current.stream();
+
         } catch (error) {
             console.error('Error loading chat history:', error);
             addMessage('Error loading chat history', SENDER_TYPES.SYSTEM, MESSAGE_SUBTYPES.ERROR, CSS_CLASSES.ERROR);
-        } finally {
             setLoading(false);
         }
-    }, [setLoading, loadHistory, addMessage]);
+    }, [setLoading, addMessage, loadHistory, parseEventData, extractErrorMessage]);
 
     const parseEventData = useCallback((e) => {
         try {

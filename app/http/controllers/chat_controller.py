@@ -65,7 +65,16 @@ class ChatController:
     ):
         try:
             await self._initialize()
-            return await self._agent_service.load_history(thread, user)
+            return EventSourceResponse(
+                self._agent_service.load_history(thread, user),
+                headers={
+                    "Cache-Control": "no-cache",
+                    "Connection": "keep-alive",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+                }
+            )
         except Exception as e:
             logger.error(f"Error fetching chat history: {str(e)}")
             raise HTTPException(status_code=500, detail="Internal server error")
