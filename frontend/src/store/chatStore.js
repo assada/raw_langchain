@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { STATUSES, MESSAGES, SENDER_TYPES, MESSAGE_SUBTYPES, CSS_CLASSES } from '../constants/constants.js';
+import { STATUSES, MESSAGES, SENDER_TYPES, MESSAGE_SUBTYPES, CSS_CLASSES, THINKING_STATES } from '../constants/constants.js';
 
 export const useChatStore = create((set, get) => ({
     messages: [],
@@ -12,6 +12,15 @@ export const useChatStore = create((set, get) => ({
     },
     currentAssistantMessage: '',
     currentAssistantTraceId: null,
+    thinkingProcess: {
+        isActive: false,
+        state: THINKING_STATES.THINKING,
+        startTime: null,
+        endTime: null,
+        duration: 0,
+        history: [], // Array of { type, timestamp, content }
+        isExpanded: false
+    },
     
     setInput: (input) => set({ input }),
     
@@ -126,6 +135,102 @@ export const useChatStore = create((set, get) => ({
     clearInput: () => set({ input: '' }),
     
     clearCurrentAssistantMessage: () => set({ currentAssistantMessage: '', currentAssistantTraceId: null }),
+
+    startThinkingProcess: () => set((state) => ({
+        thinkingProcess: {
+            ...state.thinkingProcess,
+            isActive: true,
+            state: THINKING_STATES.THINKING,
+            startTime: Date.now(),
+            endTime: null,
+            duration: 0,
+            history: [],
+            isExpanded: false
+        }
+    })),
+    
+    setThinkingState: (newState) => set((state) => ({
+        thinkingProcess: {
+            ...state.thinkingProcess,
+            state: newState
+        }
+    })),
+    
+    addThinkingEvent: (type, content) => set((state) => ({
+        thinkingProcess: {
+            ...state.thinkingProcess,
+            history: [
+                ...state.thinkingProcess.history,
+                {
+                    type,
+                    timestamp: Date.now(),
+                    content
+                }
+            ]
+        }
+    })),
+    
+    completeThinkingProcess: () => set((state) => {
+        const endTime = Date.now();
+        const duration = state.thinkingProcess.startTime ? 
+            Math.round((endTime - state.thinkingProcess.startTime) / 1000) : 0;
+
+        const shouldAddThinkingMessage = state.thinkingProcess.history.length > 0 || duration > 0;
+        
+        return {
+            messages: shouldAddThinkingMessage ? [
+                ...state.messages,
+                {
+                    id: 'thinking-' + Date.now(),
+                    content: '',
+                    sender: SENDER_TYPES.ASSISTANT,
+                    messageType: MESSAGE_SUBTYPES.MESSAGE,
+                    className: 'thinking-completed',
+                    traceId: null,
+                    timestamp: new Date().toISOString(),
+                    thinkingData: {
+                        duration,
+                        history: state.thinkingProcess.history,
+                        isExpanded: false
+                    }
+                }
+            ] : state.messages,
+            thinkingProcess: {
+                ...state.thinkingProcess,
+                state: THINKING_STATES.COMPLETED,
+                endTime,
+                duration,
+                isActive: false
+            }
+        };
+    }),
+    
+    toggleThinkingExpanded: () => set((state) => ({
+        thinkingProcess: {
+            ...state.thinkingProcess,
+            isExpanded: !state.thinkingProcess.isExpanded
+        }
+    })),
+    
+    toggleThinkingMessageExpanded: (messageId) => set((state) => ({
+        messages: state.messages.map(msg => 
+            msg.id === messageId && msg.thinkingData 
+                ? { ...msg, thinkingData: { ...msg.thinkingData, isExpanded: !msg.thinkingData.isExpanded } }
+                : msg
+        )
+    })),
+    
+    clearThinkingProcess: () => set((state) => ({
+        thinkingProcess: {
+            isActive: false,
+            state: THINKING_STATES.THINKING,
+            startTime: null,
+            endTime: null,
+            duration: 0,
+            history: [],
+            isExpanded: false
+        }
+    })),
     
     reset: () => set({
         messages: [],
@@ -137,6 +242,15 @@ export const useChatStore = create((set, get) => ({
             message: MESSAGES.READY
         },
         currentAssistantMessage: '',
-        currentAssistantTraceId: null
+        currentAssistantTraceId: null,
+        thinkingProcess: {
+            isActive: false,
+            state: THINKING_STATES.THINKING,
+            startTime: null,
+            endTime: null,
+            duration: 0,
+            history: [],
+            isExpanded: false
+        }
     })
 })); 

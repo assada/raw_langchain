@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { SSE } from 'sse.js';
 import { useChatStore } from '../store/index.js';
-import { STATUSES, MESSAGES, SENDER_TYPES, MESSAGE_SUBTYPES, CSS_CLASSES } from '../constants/constants.js';
+import { STATUSES, MESSAGES, SENDER_TYPES, MESSAGE_SUBTYPES, CSS_CLASSES, THINKING_STATES } from '../constants/constants.js';
 
 // TODO: Replace with actual API call to get user_id and thread_id
 const USER_ID = '1437ade37359488e95c0727a1cdf1786d24edce3';
@@ -18,7 +18,12 @@ export const useSSE = () => {
         finalizeAssistantMessage,
         clearCurrentAssistantMessage,
         setCurrentAssistantMessage,
-        loadHistory
+        loadHistory,
+        startThinkingProcess,
+        setThinkingState,
+        addThinkingEvent,
+        completeThinkingProcess,
+        clearThinkingProcess
     } = useChatStore();
 
     const loadChatHistory = useCallback(async () => {
@@ -91,9 +96,8 @@ export const useSSE = () => {
 
         console.log('Tool Call:', data);
         
-        const toolMessage = `🔧 Tool call: ${data.name}(${JSON.stringify(data.args)})`;
-        addMessage(toolMessage, SENDER_TYPES.ASSISTANT, MESSAGE_SUBTYPES.TOOL_CALL, CSS_CLASSES.TOOL_CALL);
-    }, [parseEventData, addMessage]);
+        addThinkingEvent('tool_call', data);
+    }, [parseEventData, addThinkingEvent]);
 
     const handleToolResult = useCallback((e) => {
         const data = parseEventData(e);
@@ -101,20 +105,19 @@ export const useSSE = () => {
 
         console.log('Tool Result:', data);
         
-        const toolMessage = `🔧 ${data.tool_name}: ${data.content}`;
-        addMessage(toolMessage, SENDER_TYPES.ASSISTANT, MESSAGE_SUBTYPES.TOOL_RESULT, CSS_CLASSES.TOOL_CALL);
-    }, [parseEventData, addMessage]);
+        addThinkingEvent('tool_result', data);
+    }, [parseEventData, addThinkingEvent]);
 
     const handleToken = useCallback((e) => {
         const data = parseEventData(e);
         if (!data) return;
 
-        console.log('Token:', data);
+        setThinkingState(THINKING_STATES.RESPONDING);
         
         if (data.content) {
             appendToCurrentAssistantMessage(data.content);
         }
-    }, [parseEventData, appendToCurrentAssistantMessage]);
+    }, [parseEventData, appendToCurrentAssistantMessage, setThinkingState]);
 
     const handleUIMessage = useCallback((e) => {
         const data = parseEventData(e);
@@ -160,6 +163,7 @@ export const useSSE = () => {
     const handleStreamEnd = useCallback(() => {
         console.log('Stream ended - resetting states');
         
+        completeThinkingProcess();
         finalizeAssistantMessage();
         setSending(false);
         setLoading(false);
@@ -168,7 +172,7 @@ export const useSSE = () => {
         if (sseRef.current) {
             sseRef.current.close();
         }
-    }, [finalizeAssistantMessage, setSending, setLoading, setConnectionStatus]);
+    }, [completeThinkingProcess, finalizeAssistantMessage, setSending, setLoading, setConnectionStatus]);
 
     const setupSSEListeners = useCallback(() => {
         if (!sseRef.current) return;
@@ -212,6 +216,7 @@ export const useSSE = () => {
         setSending(true);
         setLoading(true);
         clearCurrentAssistantMessage();
+        startThinkingProcess();
 
         try {
             // TODO: Mocked data, replace with actual API call
@@ -242,6 +247,7 @@ export const useSSE = () => {
         setSending,
         setLoading,
         clearCurrentAssistantMessage,
+        startThinkingProcess,
         setupSSEListeners,
         addMessage
     ]);

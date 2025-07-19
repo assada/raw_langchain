@@ -11,9 +11,16 @@ export const MESSAGES = {
     DISCONNECTED: 'Connection closed',
     ERROR: 'Error',
     THINKING: 'Thinking...',
+    RESPONDING: 'Responding...',
     CONNECTION_ERROR: 'Connection error',
     RECEIVE_ERROR: 'Error receiving response',
     CREATE_ERROR: 'Error creating connection'
+};
+
+export const THINKING_STATES = {
+    THINKING: 'thinking',
+    RESPONDING: 'responding',
+    COMPLETED: 'completed'
 };
 
 export const CSS_CLASSES = {
