@@ -1,7 +1,7 @@
-from .chat_request import ChatRequest
 from .feedback_request import FeedbackRequest
+from .run import Run
 
 __all__ = [
-    "ChatRequest",
+    "Run",
     "FeedbackRequest"
 ]

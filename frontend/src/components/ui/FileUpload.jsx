@@ -62,7 +62,7 @@ const FileUpload = ({ id, label, accept = [], placeholder = "Choose a file...", 
                 method: 'POST',
                 body: formData,
                 headers: {
-                    'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogMTAzLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==')
+                    'Authorization': 'Bearer ' + (localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogIjE0MzdhZGUzNzM1OTQ4OGU5NWMwNzI3YTFjZGYxNzg2ZDI0ZWRjZTMiLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==')
                 }
             });
 

@@ -1,4 +1,6 @@
 import logging
+from typing import Optional, Dict, Any, Union, List
+from uuid import UUID
 
 from fastapi import HTTPException, Depends
 from langfuse import Langfuse
@@ -8,14 +10,14 @@ from app.agent.checkpoint import CheckpointFactory
 from app.agent.graph.demo.demo_graph import DemoGraph
 from app.agent.services import AgentService
 from app.bootstrap.config import AppConfig
-from app.http.requests import ChatRequest, FeedbackRequest
+from app.http.requests import FeedbackRequest, Run
 from app.models import User, Thread
 from app.repositories import UserRepository, ThreadRepository
 
 logger = logging.getLogger(__name__)
 
 
-class ChatController:
+class ThreadController:
     def __init__(self, config: AppConfig):
         self.config = config
         self.checkpointer_provider = CheckpointFactory.create_provider(config)
@@ -23,29 +25,35 @@ class ChatController:
         self._agent_service = None
         self._langfuse = None
 
-    async def _initialize(self):
+    async def _initialize(self):  # TODO: refactor this. We should support multiple graphs
         if self._graph is None:
             self._langfuse = Langfuse(
                 debug=False,
-                # blocked_instrumentation_scopes=["sqlalchemy", "opentelemetry.instrumentation.fastapi"],
             )
             await self.checkpointer_provider.initialize()
             checkpointer = await self.checkpointer_provider.get_checkpointer()
             self._graph = DemoGraph(checkpointer, self._langfuse).build_graph()
             self._agent_service = AgentService(self._graph, self._langfuse)
 
-    async def stream_chat(
+    async def stream(
             self,
-            request: ChatRequest,
-            user: User = Depends(UserRepository.get_user_by_id),
-            thread: Thread = Depends(ThreadRepository.get_thread_by_id)
+            query: str,
+            thread_id: UUID,
+            metadata: Optional[Dict[str, Any]],
     ):
+
+        if not "user_id" in metadata:
+            raise HTTPException(status_code=400, detail="User is required")
+
+        thread = await ThreadRepository.get_thread_by_id(str(thread_id))
+        user = await UserRepository.get_user_by_id(str(metadata["user_id"]))
+
         try:
             await self._initialize()
-            logger.debug(f"Received chat request: {request.message[:50]}...")
+            logger.debug(f"Received chat request: {query[:50]}...")
 
             return EventSourceResponse(
-                self._agent_service.stream_response(request.message, thread, user),
+                self._agent_service.stream_response(query, thread, user),
                 headers={
                     "Cache-Control": "no-cache",
                     "Connection": "keep-alive",
@@ -55,10 +63,10 @@ class ChatController:
                 }
             )
         except Exception as e:
-            logger.error(f"Error processing chat request: {str(e)}")
+            logger.error(f"Error processing thread request: {str(e)}")
             raise HTTPException(status_code=500, detail="Internal server error")
 
-    async def get_chat_history(
+    async def get_thread_history(
             self,
             user: User = Depends(UserRepository.get_user_by_id),
             thread: Thread = Depends(ThreadRepository.get_thread_by_id)
@@ -76,7 +84,7 @@ class ChatController:
                 }
             )
         except Exception as e:
-            logger.error(f"Error fetching chat history: {str(e)}")
+            logger.error(f"Error fetching thread history: {str(e)}")
             raise HTTPException(status_code=500, detail="Internal server error")
 
     async def feedback(

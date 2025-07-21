@@ -7,6 +7,8 @@ from fastapi import Request, HTTPException
 from fastapi.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.repositories import UserRepository
+
 logger = logging.getLogger(__name__)
 
 
@@ -15,7 +17,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, for_paths: Optional[list] = None):
         super().__init__(app)
         # self.auth_service = AuthService()
-        self.for_paths = for_paths or ["/api/v1/chat"]
+        self.for_paths = for_paths or ["/api/v1/runs", "/api/v1/threads"]
 
     def get_auth_token(self, auth_header: str):
         if not auth_header:
@@ -38,10 +40,11 @@ class AuthMiddleware(BaseHTTPMiddleware):
             logger.debug(f"Auth token: {auth_token}")
 
             decoded_auth_token = json.loads(base64.b64decode(auth_token).decode("utf-8"))
-            logger.debug(f"Decoded auth token: {decoded_auth_token}")
-
-            response = await call_next(request)
-            return response
+            user = await UserRepository.get_user_by_id(decoded_auth_token.get("user_id"))
+            if not user:
+                return JSONResponse(status_code=401, content={"detail": "Invalid user"})
+            request.state.user = user
+            return await call_next(request)
         except Exception as e:
             logger.error(f"Authentication error: {str(e)}")
             return JSONResponse(

@@ -14,7 +14,12 @@ class ThreadRepository:
                 raise HTTPException(status_code=400, detail="Invalid thread ID")
 
             # TODO: get thread from database
-            thread = Thread(id=thread_id)
+            thread = Thread(
+                id=thread_id,
+                metadata={
+                    "title": "Sample Thread",
+                }
+            )
 
             if not thread:
                 raise HTTPException(status_code=404, detail="Thread not found")

@@ -24,11 +24,11 @@ export const MessageActions = ({ content, messageId, traceId, isUser = false }) 
         setIsSubmittingFeedback(true);
         
         try {
-            const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogMTAzLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
+            const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogIjE0MzdhZGUzNzM1OTQ4OGU5NWMwNzI3YTFjZGYxNzg2ZDI0ZWRjZTMiLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
             const userId = getUserId();
             const threadId = getThreadId();
             
-            const response = await fetch(`/api/v1/chat/${userId}/thread/${threadId}/feedback`, {
+            const response = await fetch(`/api/v1/threads/${threadId}/feedback`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -36,7 +36,9 @@ export const MessageActions = ({ content, messageId, traceId, isUser = false }) 
                 },
                 body: JSON.stringify({
                     feedback: feedbackValue,
-                    trace_id: traceId
+                    trace_id: traceId,
+                    user_id: userId,
+                    agent_id: 'demo_agent',
                 })
             });
             

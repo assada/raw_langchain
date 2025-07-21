@@ -1,5 +1,5 @@
-from .chat_controller import ChatController
+from .chat_controller import ThreadController
 
 __all__ = [
-    "ChatController",
+    "ThreadController",
 ]

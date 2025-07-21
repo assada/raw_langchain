@@ -1,5 +1,6 @@
 import json
 import logging
+from datetime import datetime, UTC
 from typing import AsyncGenerator, Any, Dict
 from uuid import uuid4
 
@@ -14,6 +15,7 @@ from app.agent.services.events.base_event import BaseEvent
 from app.agent.services.stream_processor import StreamProcessor
 from app.agent.utils.utils import langchain_to_chat_message
 from app.models import User, Thread
+from app.models.thread import ThreadStatus
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +29,9 @@ class AgentService:
     async def stream_response(self, message: str, thread: Thread, user: User) -> AsyncGenerator[Dict[str, Any], None]:
         with self.langfuse.start_as_current_span(name=self.graph.name) as span:
             run_id = uuid4()
+
+            thread.status = ThreadStatus.busy
+            thread.updated_at = datetime.now(UTC)
 
             inputs = {
                 "messages": [HumanMessage(content=message)],
@@ -53,8 +58,10 @@ class AgentService:
                     config=config
                 )
                 async for event in self.stream_processor.process_stream(stream, run_id, span):
+                    thread.status = ThreadStatus.idle
                     yield event.model_dump()
             except Exception as e:
+                thread.status = ThreadStatus.error
                 yield ErrorEvent(
                     data=json.dumps({'run_id': str(run_id), 'content': str(e)})
                 ).model_dump()
@@ -99,6 +106,7 @@ class AgentService:
                 value=feedback,
                 data_type="NUMERIC"
             )
+            thread.updated_at = datetime.now(UTC)
             return {"status": "success", "message": "Feedback recorded successfully."}
         except Exception as e:
             logger.error(f"Error recording feedback: {e}")

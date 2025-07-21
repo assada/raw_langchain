@@ -1,9 +1,16 @@
-import { useRef, useCallback } from 'react';
-import { SSE } from 'sse.js';
-import { useChatStore } from '../store/index.js';
-import { STATUSES, MESSAGES, SENDER_TYPES, MESSAGE_SUBTYPES, CSS_CLASSES, THINKING_STATES } from '../constants/constants.js';
+import {useCallback, useRef} from 'react';
+import {SSE} from 'sse.js';
+import {useChatStore} from '../store/index.js';
+import {
+    CSS_CLASSES,
+    MESSAGE_SUBTYPES,
+    MESSAGES,
+    SENDER_TYPES,
+    STATUSES,
+    THINKING_STATES
+} from '../constants/constants.js';
 
-// TODO: Replace with actual API call to get user_id and thread_id
+// TODO: Replace with actual thread_id
 const USER_ID = '1437ade37359488e95c0727a1cdf1786d24edce3';
 const THREAD_ID = 'edd5a53c-da04-4db4-84e0-a9f3592eef45';
 
@@ -28,16 +35,16 @@ export const useSSE = () => {
 
     const loadChatHistory = useCallback(async () => {
         setLoading(true);
-        
+
         try {
             if (sseRef.current) {
                 sseRef.current.close();
             }
 
-            const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogMTAzLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
+            const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogIjE0MzdhZGUzNzM1OTQ4OGU5NWMwNzI3YTFjZGYxNzg2ZDI0ZWRjZTMiLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
 
             const historicalMessages = [];
-            sseRef.current = new SSE(`/api/v1/chat/${USER_ID}/thread/${THREAD_ID}`, {
+            sseRef.current = new SSE(`/api/v1/threads/${THREAD_ID}/history`, {
                 headers: {
                     'Authorization': 'Bearer ' + authToken
                 },
@@ -68,7 +75,7 @@ export const useSSE = () => {
                 if (historicalMessages.length > 0) {
                     loadHistory(historicalMessages);
                 }
-                
+
                 setLoading(false);
                 if (sseRef.current) {
                     sseRef.current.close();
@@ -110,7 +117,7 @@ export const useSSE = () => {
 
     const extractErrorMessage = useCallback((e) => {
         if (!e.data) return MESSAGES.RECEIVE_ERROR;
-        
+
         try {
             const errorData = JSON.parse(e.data);
             return errorData.content || MESSAGES.RECEIVE_ERROR;
@@ -129,7 +136,7 @@ export const useSSE = () => {
     const handleAIMessage = useCallback((e) => {
         const data = parseEventData(e);
         if (!data) return;
-        
+
         if (data.content) {
             setCurrentAssistantMessage(data.content, data.trace_id);
         }
@@ -140,7 +147,7 @@ export const useSSE = () => {
         if (!data) return;
 
         console.log('Tool Call:', data);
-        
+
         addThinkingEvent('tool_call', data);
     }, [parseEventData, addThinkingEvent]);
 
@@ -149,7 +156,7 @@ export const useSSE = () => {
         if (!data) return;
 
         console.log('Tool Result:', data);
-        
+
         addThinkingEvent('tool_result', data);
     }, [parseEventData, addThinkingEvent]);
 
@@ -158,7 +165,7 @@ export const useSSE = () => {
         if (!data) return;
 
         setThinkingState(THINKING_STATES.RESPONDING);
-        
+
         if (data.content) {
             appendToCurrentAssistantMessage(data.content);
         }
@@ -167,17 +174,17 @@ export const useSSE = () => {
     const handleUIMessage = useCallback((e) => {
         const data = parseEventData(e);
         if (!data) return;
-        
+
         addMessage(data, SENDER_TYPES.ASSISTANT, MESSAGE_SUBTYPES.UI, CSS_CLASSES.UI_MESSAGE);
     }, [parseEventData, addMessage]);
 
     const handleSSEError = useCallback((e) => {
         console.error('SSE Error:', e);
         setConnectionStatus(STATUSES.DISCONNECTED, MESSAGES.CONNECTION_ERROR);
-        
+
         const errorMessage = extractErrorMessage(e);
         addMessage(errorMessage, SENDER_TYPES.SYSTEM, MESSAGE_SUBTYPES.ERROR, CSS_CLASSES.ERROR);
-        
+
         setLoading(false);
         setSending(false);
     }, [setConnectionStatus, extractErrorMessage, addMessage, setLoading, setSending]);
@@ -207,13 +214,13 @@ export const useSSE = () => {
 
     const handleStreamEnd = useCallback(() => {
         console.log('Stream ended - resetting states');
-        
+
         completeThinkingProcess();
         finalizeAssistantMessage();
         setSending(false);
         setLoading(false);
         setConnectionStatus(STATUSES.DISCONNECTED, MESSAGES.READY);
-        
+
         if (sseRef.current) {
             sseRef.current.close();
         }
@@ -265,15 +272,19 @@ export const useSSE = () => {
 
         try {
             // TODO: Mocked data, replace with actual API call
-            const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogMTAzLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
-            sseRef.current = new SSE(`/api/v1/chat/${USER_ID}/thread/${THREAD_ID}/stream`, {
+            const authToken = localStorage.getItem('authToken') || 'eyJ1c2VyX2lkIjogIjE0MzdhZGUzNzM1OTQ4OGU5NWMwNzI3YTFjZGYxNzg2ZDI0ZWRjZTMiLCAiZW1haWwiOiAidGVzdEBnbWFpbC5jb20ifQ==';
+            sseRef.current = new SSE(`/api/v1/runs/stream`, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + authToken
                 },
                 payload: JSON.stringify({
-                    message: message,
-                    // thread_id: 1
+                    input: message,
+                    thread_id: THREAD_ID,
+                    metadata: {
+                        user_id: USER_ID,
+                    },
+                    agent_id: 'demo_agent',
                 }),
                 autoReconnect: false,
                 start: false
