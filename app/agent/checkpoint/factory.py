@@ -1,4 +1,5 @@
 import logging
+from functools import lru_cache
 from typing import Dict, Type
 
 from app.agent.checkpoint.base import CheckpointProvider
@@ -41,3 +42,10 @@ class CheckpointFactory:
     @classmethod
     def get_supported_types(cls) -> list[str]:
         return list(cls._providers.keys())
+
+
+@lru_cache()
+def get_checkpoint_provider() -> CheckpointProvider:
+    """Get a singleton checkpoint provider instance"""
+    from app.bootstrap.config import get_config
+    return CheckpointFactory.create_provider(get_config())

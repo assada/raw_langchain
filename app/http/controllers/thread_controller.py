@@ -1,16 +1,16 @@
 import logging
-from typing import Optional, Dict, Any, Union, List
+from typing import Optional, Dict, Any
 from uuid import UUID
 
 from fastapi import HTTPException, Depends
 from langfuse import Langfuse
 from sse_starlette.sse import EventSourceResponse
 
-from app.agent.checkpoint import CheckpointFactory
+from app.agent.checkpoint.factory import get_checkpoint_provider
 from app.agent.graph.demo.demo_graph import DemoGraph
 from app.agent.services import AgentService
 from app.bootstrap.config import AppConfig
-from app.http.requests import FeedbackRequest, Run
+from app.http.requests import FeedbackRequest
 from app.models import User, Thread
 from app.repositories import UserRepository, ThreadRepository
 
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class ThreadController:
     def __init__(self, config: AppConfig):
         self.config = config
-        self.checkpointer_provider = CheckpointFactory.create_provider(config)
+        self.checkpointer_provider = get_checkpoint_provider()
         self._graph = None
         self._agent_service = None
         self._langfuse = None
