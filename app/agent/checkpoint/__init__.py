@@ -1,10 +1,11 @@
-from .base import CheckpointProvider
-from .factory import CheckpointFactory
-from .providers import MemoryCheckpointProvider, PostgresCheckpointProvider
+from .base import BaseCheckpointer
+from .factory import CheckpointerFactory
+from .memory import MemoryCheckpointer
+from .postgres import PostgresCheckpointer
 
 __all__ = [
-    "CheckpointProvider",
-    "CheckpointFactory",
-    "MemoryCheckpointProvider",
-    "PostgresCheckpointProvider",
+    "BaseCheckpointer",
+    "CheckpointerFactory",
+    "MemoryCheckpointer",
+    "PostgresCheckpointer",
 ]

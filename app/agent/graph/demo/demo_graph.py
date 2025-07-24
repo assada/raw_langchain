@@ -37,7 +37,7 @@ class DemoGraph(Graph):
             )
 
             model = load_chat_model(
-                langfuse_prompt.config.get("model", "openai/4o-mini"),
+                langfuse_prompt.config.get("model", "openai/gpt-4o-mini"),
                 temperature=langfuse_prompt.config.get("temperature", 1)
             ).bind_tools(TOOLS)
 

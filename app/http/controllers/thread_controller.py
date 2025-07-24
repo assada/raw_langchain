@@ -6,7 +6,7 @@ from fastapi import HTTPException, Depends
 from langfuse import Langfuse
 from sse_starlette.sse import EventSourceResponse
 
-from app.agent.checkpoint.factory import get_checkpoint_provider
+from app.agent.checkpoint.factory import CheckpointerFactory
 from app.agent.graph.demo.demo_graph import DemoGraph
 from app.agent.services import AgentService
 from app.bootstrap.config import AppConfig
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class ThreadController:
     def __init__(self, config: AppConfig):
         self.config = config
-        self.checkpointer_provider = get_checkpoint_provider()
+        self._checkpointer_provider = None
         self._graph = None
         self._agent_service = None
         self._langfuse = None
@@ -30,8 +30,9 @@ class ThreadController:
             self._langfuse = Langfuse(
                 debug=False,
             )
-            await self.checkpointer_provider.initialize()
-            checkpointer = await self.checkpointer_provider.get_checkpointer()
+            if self._checkpointer_provider is None:
+                self._checkpointer_provider = await CheckpointerFactory.create(self.config)
+            checkpointer = self._checkpointer_provider.get_checkpointer()
             self._graph = DemoGraph(checkpointer, self._langfuse).build_graph()
             self._agent_service = AgentService(self._graph, self._langfuse)
 

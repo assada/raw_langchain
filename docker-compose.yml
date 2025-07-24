@@ -31,12 +31,7 @@ services:
       - PORT=8000
       - DEBUG=true
       - RELOAD=true
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/raw_langchain
-      - POSTGRES_HOST=db
-      - POSTGRES_PORT=5432
-      - POSTGRES_DB=raw_langchain
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/raw_langgraph
     volumes:
       - .:/app
       - /app/node_modules
