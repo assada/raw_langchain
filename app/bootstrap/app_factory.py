@@ -15,7 +15,7 @@ from ..http.routes import thread_router, runs_router, health_router
 
 def create_app(config: AppConfig) -> FastAPI:
     app = FastAPI(
-        title="Raw Langchain",
+        title="Raw LangGraph",
         description="A test application",
         version="0.0.1",
         debug=config.debug

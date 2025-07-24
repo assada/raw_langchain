@@ -14,6 +14,10 @@ class DatabaseConnection(ABC):
         pass
 
     @abstractmethod
+    async def get_pool(self) -> Any:
+        pass
+
+    @abstractmethod
     def get_connection_string(self) -> str:
         pass
 

@@ -1,9 +1,9 @@
 import logging
 from typing import Optional
 
-import psycopg
 from psycopg import AsyncConnection
 from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 
 from app.bootstrap.config import AppConfig
 from app.infrastructure.database.connection import DatabaseConnection
@@ -14,7 +14,11 @@ logger = logging.getLogger(__name__)
 class PostgreSQLConnection(DatabaseConnection):
     def __init__(self, config: AppConfig):
         self.config = config
-        self._async_connection: Optional[AsyncConnection] = None
+        self._pool: Optional[AsyncConnectionPool] = None
+        self._connection_kwargs = {
+            "autocommit": True,  # Mandatory for checkpointing
+            "row_factory": dict_row,  # Mandatory for checkpointing
+        }
 
     def get_connection_string(self) -> str:
         return self.config.database_url
@@ -23,20 +27,31 @@ class PostgreSQLConnection(DatabaseConnection):
         raise NotImplementedError("Sync connection not supported in async implementation")
 
     async def get_async_connection(self) -> AsyncConnection:
-        if self._async_connection is None or self._async_connection.closed:
+        pool = await self.get_pool()
+        try:
+            return await pool.getconn()
+        except Exception as e:
+            logger.error(f"Failed to get connection from pool: {e}")
+            raise
+
+    async def get_pool(self) -> AsyncConnectionPool:
+        if self._pool is None:
             try:
-                self._async_connection = await psycopg.AsyncConnection.connect(
-                    self.get_connection_string(),
-                    autocommit=True,  # Mandatory for checkpointing
-                    connect_timeout=10,
-                    row_factory=dict_row  # Mandatory for checkpointing
+                self._pool = AsyncConnectionPool(
+                    conninfo=self.get_connection_string(),
+                    min_size=1,
+                    max_size=20,
+                    kwargs=self._connection_kwargs
                 )
+                await self._pool.wait()
+                logger.debug("PostgreSQL connection pool initialized")
             except Exception as e:
-                logger.error(f"Failed to establish PostgreSQL async connection: {e}")
+                logger.error(f"Failed to initialize PostgreSQL connection pool: {e}")
                 raise
 
-        return self._async_connection
+        return self._pool
 
     def close(self) -> None:
-        if self._async_connection and not self._async_connection.closed:
-            self._async_connection.close()
+        if self._pool:
+            self._pool.close()
+            logger.debug("PostgreSQL connection pool closed")
