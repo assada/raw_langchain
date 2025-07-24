@@ -6,6 +6,7 @@ from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.runnables import RunnableConfig
 from langfuse import Langfuse
+from langfuse.langchain import CallbackHandler
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import START, END, StateGraph
 from langgraph.graph.state import CompiledStateGraph
@@ -14,7 +15,7 @@ from langgraph.prebuilt import ToolNode
 from app.agent.graph.base_state import BaseState
 from app.agent.graph.demo.state import State
 from app.agent.graph.demo.tools.tools import TOOLS
-from app.agent.graph.graph import Graph
+from app.agent.graph import Graph
 from app.agent.utils.utils import load_chat_model
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,10 @@ class DemoGraph(Graph):
                 .partial(system_time=datetime.now(tz=UTC).isoformat())
             )
             prompt.metadata = {"langfuse_prompt": langfuse_prompt}
+
+            config.update(
+                callbacks=[CallbackHandler()]
+            )
 
             chain = prompt | model
 
