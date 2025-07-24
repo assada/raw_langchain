@@ -1,3 +1,12 @@
+## Features
+
+* SSE Response streaming
+* Swagger api (thx fastapi)
+* Observability (thx LangFuse)
+* Prompt management (thx LangFuse)
+* User feedback (thx LangFuse)
+* Guardrails (thx LLMGuard)
+
 ## Quick Start
 
 1. Clone
@@ -39,7 +48,14 @@
 - [ ] Add tests
 - [ ] Add evaluation metrics
 - [ ] Add *one more* abstraction layer so the agent can use different frameworks (LangGraph, LlamaIndex, etc.)
-- [ ] Add even more fucking abstractions to make it independent of observability tools (LangFuse, LangSmith, Grafana Alloy, or whatever the fuck else)
-- [ ] Long-Term memory for each user. I want to add to chat application for real-time per thread prompt tuning - memory insights, response strategies, etc. But this is more about agent implementation not template core. Graph node as "addon package?" LOL! https://i.imgur.com/k1jk3cx.png here we go again!
+- [ ] Add even more fucking abstractions to make it independent of observability tools (LangFuse, LangSmith, Grafana
+  Alloy, or whatever the fuck else)
+- [ ] Long-Term memory for each user. I want to add to chat application for real-time per thread prompt tuning - memory
+  insights, response strategies, etc. But this is more about agent implementation not template core. Graph node as "
+  addon package?" LOL! https://i.imgur.com/k1jk3cx.png here we go again!
 - [ ] thread management Create/Update/Delete (thread model(ulid, user_id, created/updated, title, status[]))
-- [ ] refactor checkpointer shit factory
+- [x] refactor checkpointer shit factory
+- [ ] refactor LLM Guards
+- [ ] Graph configuration
+- [ ] Refactor utils (e.g load_chat_model)
+- [ ] Full rewrite `stream_processor.py`

@@ -32,6 +32,8 @@ COPY . .
 
 RUN mkdir -p frontend/dist
 
+RUN uv pip install pip setuptools wheel
+
 EXPOSE 8000
 
 CMD ["uv", "run", "python", "main.py"] 

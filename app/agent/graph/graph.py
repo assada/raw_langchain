@@ -3,13 +3,18 @@ from abc import ABC, abstractmethod
 from datetime import UTC, datetime
 from typing import Dict, List, cast, TypeVar, Generic
 
+import llm_guard
+from langchain.chains.base import Chain
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-from langchain_core.runnables import RunnableConfig
+from langchain_core.runnables import RunnableConfig, RunnableLambda, Runnable, RunnableMap
+from langchain_core.runnables import RunnablePassthrough
 from langfuse import Langfuse
 from langgraph.checkpoint.base import BaseCheckpointSaver
 
 from app.agent.graph.base_state import BaseState
+from app.agent.guards import LLMGuardPromptChain
+from app.agent.guards.LLMGuard import LLMGuardOutputChain
 from app.agent.utils.utils import load_chat_model
 
 logger = logging.getLogger(__name__)
@@ -21,6 +26,60 @@ class Graph(ABC, Generic[StateType]):
     def __init__(self, checkpointer: BaseCheckpointSaver, langfuse: Langfuse):
         self._checkpointer = checkpointer
         self._langfuse = langfuse
+        self._vault = llm_guard.vault.Vault()
+        self._use_onnx = False  # TODO: Make this configurable
+        self.use_output_scanner = False  # TODO: Make this configurable
+        self.use_prompt_scanner = False  # TODO: Make this configurable
+
+    def get_guard_prompt_scanner(self) -> Runnable | Chain:
+        if not self.use_prompt_scanner:
+            return RunnableLambda(lambda d: {"history": d["input"]})
+        return LLMGuardPromptChain(
+            vault=self._vault,
+            scanners={
+                "Anonymize": {"use_faker": False, "use_onnx": self._use_onnx},
+                "BanSubstrings": {
+                    "substrings": ["Laiyer"],
+                    "match_type": "word",
+                    "case_sensitive": False,
+                    "redact": True,
+                },
+                "BanTopics": {"topics": ["violence"], "threshold": 0.7, "use_onnx": self._use_onnx},
+            },
+            scanners_ignore_errors=[
+                "Anonymize",
+                # "BanSubstrings",
+            ],  # These scanners redact, so I can skip them from failing the prompt
+        )
+
+    def get_guard_output_scanner(self) -> Runnable | Chain:
+        if not self.use_output_scanner:
+            return RunnablePassthrough()
+        return LLMGuardOutputChain(
+            vault=self._vault,
+            scanners={
+                "BanSubstrings": {
+                    "substrings": ["Laiyer", "Привіт", "Hello", "сонячно"],
+                    "match_type": "word",
+                    "case_sensitive": False,
+                    "redact": True,
+                },
+                "BanTopics": {"topics": ["violence"], "threshold": 0.7, "use_onnx": self._use_onnx},
+                "Deanonymize": {},
+                "Language": {
+                    "valid_languages": ["en"],
+                    "use_onnx": self._use_onnx,
+                },
+                "MaliciousURLs": {"threshold": 0.75, "use_onnx": self._use_onnx},
+                "Regex": {
+                    "patterns": ["Bearer [A-Za-z0-9-._~+/]+"],
+                },
+                "Sensitive": {"redact": False, "use_onnx": self._use_onnx},
+                "Sentiment": {"threshold": -0.05},
+                "Toxicity": {"threshold": 0.7, "use_onnx": self._use_onnx},
+            },
+            scanners_ignore_errors=["BanSubstrings", "Regex", "Sensitive"],
+        )
 
     @property
     @abstractmethod
@@ -93,23 +152,39 @@ class Graph(ABC, Generic[StateType]):
         if tools:
             model = model.bind_tools(tools)
 
-        prompt = (
+        template = (
             ChatPromptTemplate.from_messages([
                 ("system", langfuse_prompt.get_langchain_prompt()),
                 MessagesPlaceholder("history"),
             ])
             .partial(**self.get_prompt_placeholders())
         )
-        prompt.metadata = {"langfuse_prompt": langfuse_prompt}
+        template.metadata = {"langfuse_prompt": langfuse_prompt}
 
-        chain = prompt | model
-        response = cast(
-            AIMessage,
-            await chain.ainvoke(
-                {"history": state.messages},
-                config=config, # TODO: Pass handler here?
-            ),
+        pipeline = (
+                self.get_guard_prompt_scanner()
+                | template
         )
+
+        model_output = pipeline | model
+
+        output_guard = self.get_guard_output_scanner()
+
+        if isinstance(output_guard, RunnablePassthrough):
+            guarded_chain = model_output
+        else:
+            pack_for_guard = RunnableMap(prompt=pipeline, output=model_output)
+            guarded_chain = pack_for_guard | output_guard
+
+        raw_resp = await guarded_chain.ainvoke(
+            {"input": state.messages},
+            config=config,
+        )
+
+        if isinstance(raw_resp, dict):
+            raw_resp = raw_resp.get("result", raw_resp)
+
+        response = cast(AIMessage, raw_resp)
 
         if self.is_emergency_stop_needed(state, response):
             response = self.create_emergency_response(response)
