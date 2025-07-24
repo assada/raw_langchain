@@ -7,6 +7,7 @@ from uuid import uuid4
 from langchain_core.messages import HumanMessage
 from langchain_core.runnables import RunnableConfig
 from langfuse import Langfuse
+from langfuse.langchain import CallbackHandler
 from langgraph.graph.state import CompiledStateGraph
 
 from app.agent.services.events import ErrorEvent, EndEvent
@@ -47,6 +48,7 @@ class AgentService:
                     "langfuse_tags": ["production", "chat-bot"],
                 },
                 run_id=run_id,
+                callbacks=[CallbackHandler()]
             )
 
             try:
