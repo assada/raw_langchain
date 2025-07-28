@@ -62,8 +62,8 @@ class AgentService:
                     inputs, stream_mode=["updates", "messages", "custom"], config=config
                 )
                 async for event in self.stream_processor.process_stream(
-                    stream, run_id, span
-                ):  # type: ignore[arg-type]
+                    stream, run_id, span # type: ignore[arg-type]
+                ):
                     thread.status = ThreadStatus.idle
                     yield event.model_dump()
             except Exception as e:
