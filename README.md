@@ -1,3 +1,5 @@
+[![CI](https://github.com/assada/raw_langgraph/actions/workflows/ci.yml/badge.svg)](https://github.com/assada/raw_langgraph/actions/workflows/ci.yml)
+
 ## Quick Start
 
 1. Clone
