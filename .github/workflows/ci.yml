@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    name: Lint and Type Check
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: "latest"
+
+      - name: Set up Python
+        run: uv python install 3.13
+
+      - name: Install dependencies
+        run: uv sync
+
+      - name: Run Ruff linter
+        id: ruff
+        run: |
+          echo "## 🔍 Ruff Linter Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          uv run ruff check . --output-format=text 2>&1 | tee ruff-results.txt || true
+          cat ruff-results.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Run MyPy type checker
+        id: mypy
+        run: |
+          echo "## 🔬 MyPy Type Checker Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          uv run mypy --strict app/ 2>&1 | tee mypy-results.txt || true
+          cat mypy-results.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Run Ruff formatter check
+        id: ruff-format
+        run: |
+          echo "## 🎨 Ruff Formatter Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          uv run ruff format --check --diff . 2>&1 | tee format-results.txt || true
+          cat format-results.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for critical issues
+        run: |
+          # Check if there are any critical ruff issues
+          RUFF_ERRORS=$(uv run ruff check . --output-format=text 2>&1 || true)
+          # Check if there are any mypy errors
+          MYPY_ERRORS=$(uv run mypy --strict app/ 2>&1 || true)
+          
+          # Count actual errors (not just warnings)
+          RUFF_ERROR_COUNT=$(echo "$RUFF_ERRORS" | grep -c "error:" || true)
+          MYPY_ERROR_COUNT=$(echo "$MYPY_ERRORS" | grep -c "error:" || true)
+          
+          echo "## 📊 Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Ruff errors found:** $RUFF_ERROR_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- **MyPy errors found:** $MYPY_ERROR_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "$RUFF_ERROR_COUNT" -gt 0 ] || [ "$MYPY_ERROR_COUNT" -gt 0 ]; then
+            echo "❌ **CI Failed:** Critical issues found that need to be fixed." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          else
+            echo "✅ **CI Passed:** No critical issues found!" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload lint results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lint-results
+          path: |
+            ruff-results.txt
+            mypy-results.txt
+            format-results.txt
+          retention-days: 30 
