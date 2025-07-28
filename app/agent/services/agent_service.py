@@ -27,8 +27,12 @@ class AgentService:
         self.graph = graph
         self.stream_processor = StreamProcessor()
 
-    async def stream_response(self, message: str, thread: Thread, user: User) -> AsyncGenerator[dict[str, Any]]:
-        with self.langfuse.start_as_current_span(name=self.graph.name, input=message) as span:
+    async def stream_response(
+        self, message: str, thread: Thread, user: User
+    ) -> AsyncGenerator[dict[str, Any]]:
+        with self.langfuse.start_as_current_span(
+            name=self.graph.name, input=message
+        ) as span:
             run_id = uuid4()
 
             thread.status = ThreadStatus.busy
@@ -50,31 +54,38 @@ class AgentService:
                     "trace_id": span.trace_id,
                 },
                 run_id=run_id,
-                callbacks=[CallbackHandler()]
+                callbacks=[CallbackHandler()],
             )
 
             try:
                 stream = self.graph.astream(
-                    inputs,
-                    stream_mode=["updates", "messages", "custom"],
-                    config=config
+                    inputs, stream_mode=["updates", "messages", "custom"], config=config
                 )
-                async for event in self.stream_processor.process_stream(stream, run_id, span):  # type: ignore[arg-type]
+                async for event in self.stream_processor.process_stream(
+                    stream, run_id, span
+                ):  # type: ignore[arg-type]
                     thread.status = ThreadStatus.idle
                     yield event.model_dump()
             except Exception as e:
                 thread.status = ThreadStatus.error
                 yield ErrorEvent(
-                    data=json.dumps({'run_id': str(run_id), 'content': str(e)})
+                    data=json.dumps({"run_id": str(run_id), "content": str(e)})
                 ).model_dump()
 
-    async def load_history(self, thread: Thread, user: User) -> AsyncGenerator[dict[str, Any]]:
+    async def load_history(
+        self, thread: Thread, user: User
+    ) -> AsyncGenerator[dict[str, Any]]:
         try:
             state_snapshot = await self.graph.aget_state(
-                config=RunnableConfig(configurable={"thread_id": thread.id, "user_id": user.id}),
+                config=RunnableConfig(
+                    configurable={"thread_id": thread.id, "user_id": user.id}
+                ),
             )
 
-            trace_by_id = {m["id"]: m["trace_id"] for m in state_snapshot.values.get("message_trace_map", [])}
+            trace_by_id = {
+                m["id"]: m["trace_id"]
+                for m in state_snapshot.values.get("message_trace_map", [])
+            }
 
             messages = state_snapshot.values.get("messages", [])
             if not messages:
@@ -85,9 +96,7 @@ class AgentService:
                 chat_msg = to_chat_message(m, trace_id=trace_by_id.get(m.id))
 
                 event = BaseEvent.from_payload(
-                    event=chat_msg.type,
-                    payload=chat_msg.model_dump(),
-                    source="history"
+                    event=chat_msg.type, payload=chat_msg.model_dump(), source="history"
                 )
 
                 yield event.model_dump()
@@ -100,7 +109,9 @@ class AgentService:
                 data=json.dumps({"content": f"Error loading history: {str(e)}"})
             ).model_dump()
 
-    async def add_feedback(self, trace: str, feedback: float, thread: Thread, user: User) -> dict[str, str]:
+    async def add_feedback(
+        self, trace: str, feedback: float, thread: Thread, user: User
+    ) -> dict[str, str]:
         try:
             self.langfuse.create_score(
                 trace_id=trace,
@@ -111,7 +122,7 @@ class AgentService:
                 comment="User feedback on the response",
                 metadata={
                     "langfuse_user_id": str(user.id),
-                }
+                },
             )
             thread.updated_at = datetime.now(UTC)
             return {"status": "success", "message": "Feedback recorded successfully."}

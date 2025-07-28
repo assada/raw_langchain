@@ -5,4 +5,4 @@ __all__ = [
     "setup_cors_middleware",
     "CORSConfig",
     "AuthMiddleware",
-] 
+]

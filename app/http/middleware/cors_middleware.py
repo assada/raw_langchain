@@ -4,11 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 
 class CORSConfig:
     def __init__(
-            self,
-            allow_origins: list[str] | None = None,
-            allow_credentials: bool | None = True,
-            allow_methods: list[str] | None = None,
-            allow_headers: list[str] | None = None
+        self,
+        allow_origins: list[str] | None = None,
+        allow_credentials: bool | None = True,
+        allow_methods: list[str] | None = None,
+        allow_headers: list[str] | None = None,
     ):
         self.allow_origins = allow_origins or ["*"]
         self.allow_credentials = allow_credentials

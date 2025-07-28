@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class CheckpointerFactory:
-
     @classmethod
     async def create(cls, config: AppConfig) -> BaseCheckpointer:
         checkpoint_type = config.checkpoint_type.lower()
@@ -22,9 +21,7 @@ class CheckpointerFactory:
             database_connection = DatabaseConnectionFactory.create_connection(config)
             instance = PostgresCheckpointer(database_connection)
         else:
-            raise ValueError(
-                f"Unsupported checkpointer type: {checkpoint_type}"
-            )
+            raise ValueError(f"Unsupported checkpointer type: {checkpoint_type}")
 
         await instance.initialize()
         return instance

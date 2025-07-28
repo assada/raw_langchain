@@ -11,16 +11,18 @@ async def get_weather(city: str) -> str:
 
     writer = get_stream_writer()
     if writer is not None:
-        writer(CustomUIMessage(
-            type="ui",
-            component="file_upload",
-            id="doc-upload",
-            params={
-                "label": "Upload weather data",
-                "accept": ["application/json"],
-                "placeholder": f"Upload a JSON file with weather data for the {city} city.",
-            }
-        ))
+        writer(
+            CustomUIMessage(
+                type="ui",
+                component="file_upload",
+                id="doc-upload",
+                params={
+                    "label": "Upload weather data",
+                    "accept": ["application/json"],
+                    "placeholder": f"Upload a JSON file with weather data for the {city} city.",
+                },
+            )
+        )
 
     return f"It's always sunny in {city}!"
 

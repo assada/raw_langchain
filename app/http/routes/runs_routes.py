@@ -11,6 +11,8 @@ thread_controller = ThreadController(get_config())
 
 @runs_router.post("/runs/stream")
 async def run_stream(
-        request: Run,
+    request: Run,
 ) -> EventSourceResponse:
-    return await thread_controller.stream(request.input, request.thread_id, request.metadata or {})
+    return await thread_controller.stream(
+        request.input, request.thread_id, request.metadata or {}
+    )

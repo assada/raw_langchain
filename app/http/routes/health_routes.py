@@ -13,7 +13,7 @@ async def health_check() -> dict[str, str]:
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
-        "service": "enterprise-chat-api"
+        "service": "enterprise-chat-api",
     }
 
 
@@ -27,7 +27,7 @@ async def detailed_health_check() -> dict[str, str | dict[str, str]]:
             "components": {
                 "chat_service": "healthy",
                 "agent": "healthy",
-            }
+            },
         }
     except Exception as e:
         logger.error(f"Health check failed: {str(e)}")
@@ -35,5 +35,5 @@ async def detailed_health_check() -> dict[str, str | dict[str, str]]:
             "status": "unhealthy",
             "timestamp": datetime.utcnow().isoformat(),
             "service": "enterprise-chat-api",
-            "error": str(e)
+            "error": str(e),
         }

@@ -15,7 +15,7 @@ def main():
         host=config.host,
         port=config.port,
         reload=config.reload,
-        server_header=False
+        server_header=False,
     )
 
 

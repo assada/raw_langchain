@@ -12,6 +12,7 @@ MessageType = Literal[
     "ai_message",
 ]
 
+
 class ChatMessage(BaseModel):
     type: MessageType = "unknown"
     run_id: str | None = Field(

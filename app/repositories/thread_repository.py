@@ -9,7 +9,9 @@ logger = logging.getLogger(__name__)
 
 class ThreadRepository:
     @staticmethod
-    async def get_thread_by_id(thread_id: str = Path(..., description="Thread ID")) -> Thread:
+    async def get_thread_by_id(
+        thread_id: str = Path(..., description="Thread ID"),
+    ) -> Thread:
         try:
             if thread_id is None or not isinstance(thread_id, str):
                 raise HTTPException(status_code=400, detail="Invalid thread ID")
@@ -19,7 +21,7 @@ class ThreadRepository:
                 id=thread_id,
                 metadata={
                     "title": "Sample Thread",
-                }
+                },
             )
 
             if not thread:
@@ -29,7 +31,9 @@ class ThreadRepository:
             return thread
 
         except ValueError as ve:
-            raise HTTPException(status_code=400, detail="Invalid thread ID format") from ve
+            raise HTTPException(
+                status_code=400, detail="Invalid thread ID format"
+            ) from ve
         except HTTPException:
             raise
         except Exception as e:

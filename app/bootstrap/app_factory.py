@@ -20,20 +20,20 @@ def create_app(config: AppConfig) -> FastAPI:
         title="Raw LangGraph",
         description="A test application",
         version="0.0.1",
-        debug=config.debug
+        debug=config.debug,
     )
 
     cors_config = CORSConfig(
         allow_origins=config.cors_origins,
         allow_credentials=config.cors_allow_credentials,
         allow_methods=config.cors_allow_methods,
-        allow_headers=config.cors_allow_headers
+        allow_headers=config.cors_allow_headers,
     )
     setup_cors_middleware(app, cors_config)
 
     app.add_middleware(
         CorrelationIdMiddleware,
-        header_name='X-Request-ID',
+        header_name="X-Request-ID",
         update_request_header=True,
         generator=lambda: uuid4().hex,
         validator=is_valid_uuid4,
@@ -52,7 +52,11 @@ def create_app(config: AppConfig) -> FastAPI:
     ).instrument(app).expose(app)
 
     try:
-        app.mount("/", StaticFiles(directory=config.static_files_directory, html=True), name="frontend")
+        app.mount(
+            "/",
+            StaticFiles(directory=config.static_files_directory, html=True),
+            name="frontend",
+        )
     except RuntimeError:
         pass
 

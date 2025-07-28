@@ -20,16 +20,18 @@ class Thread(BaseModel):
     created_at: AwareDatetime = Field(
         default_factory=lambda: datetime.now(UTC),
         description="The time the thread was created.",
-        examples=["2023-10-01T12:00:00Z"]
+        examples=["2023-10-01T12:00:00Z"],
     )
     updated_at: AwareDatetime = Field(
         default_factory=lambda: datetime.now(UTC),
         description="The last time the thread was updated.",
-        examples=["2023-10-01T12:00:00Z"]
+        examples=["2023-10-01T12:00:00Z"],
     )
     metadata: dict[str, Any] = Field(
         ..., description="The thread metadata.", title="Metadata"
     )
     status: ThreadStatus | None = Field(
-        default=ThreadStatus.idle, description="Thread status to filter on.", title="Thread Status"
+        default=ThreadStatus.idle,
+        description="Thread status to filter on.",
+        title="Thread Status",
     )

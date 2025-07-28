@@ -23,7 +23,9 @@ class PostgresCheckpointer(BaseCheckpointer):
             pool = await self.database_connection.get_pool()
             self._checkpointer = AsyncPostgresSaver(pool)
             await self._checkpointer.setup()
-            logger.debug("PostgreSQL checkpoint provider initialized with connection pool")
+            logger.debug(
+                "PostgreSQL checkpoint provider initialized with connection pool"
+            )
 
     async def cleanup(self) -> None:
         """Clean up PostgreSQL resources."""

@@ -36,7 +36,9 @@ class StreamProcessor:
 
     @staticmethod
     def _create_ai_message(parts: dict[str, Any]) -> AIMessage:
-        filtered = {k: v for k, v in parts.items() if k in StreamProcessor._ai_valid_keys}
+        filtered = {
+            k: v for k, v in parts.items() if k in StreamProcessor._ai_valid_keys
+        }
         return AIMessage(**filtered)
 
     @staticmethod
@@ -52,10 +54,10 @@ class StreamProcessor:
         return [event]
 
     def _messages_to_events(
-            self,
-            messages: list[Any],
-            run_id: UUID,
-            span: LangfuseSpan | None,
+        self,
+        messages: list[Any],
+        run_id: UUID,
+        span: LangfuseSpan | None,
     ) -> list[BaseEvent]:
         consolidated: list[Any] = []
         current: dict[str, Any] = {}
@@ -82,8 +84,8 @@ class StreamProcessor:
                 chat.run_id = str(run_id)
 
                 if (
-                        isinstance(chat, HumanMessage)
-                        and getattr(message, "content", None) == chat.content
+                    isinstance(chat, HumanMessage)
+                    and getattr(message, "content", None) == chat.content
                 ):
                     continue
 
@@ -99,19 +101,20 @@ class StreamProcessor:
                 )
             except Exception as exc:  # noqa: BLE001
                 logger.exception("Failed to parse message: %s", exc)
-                events.append(ErrorEvent(data=json.dumps({"content": "Unexpected error"})))
+                events.append(
+                    ErrorEvent(data=json.dumps({"content": "Unexpected error"}))
+                )
 
         return events
 
     @staticmethod
     def _token_event(
-            event: tuple[AIMessageChunk, dict[str, Any]],
-            run_id: UUID,
+        event: tuple[AIMessageChunk, dict[str, Any]],
+        run_id: UUID,
     ) -> TokenEvent | None:
         msg, metadata = event
-        if (
-                not isinstance(msg, AIMessageChunk)
-                or "skip_stream" in metadata.get("tags", [])
+        if not isinstance(msg, AIMessageChunk) or "skip_stream" in metadata.get(
+            "tags", []
         ):
             return None
 
@@ -126,12 +129,11 @@ class StreamProcessor:
         return TokenEvent(data=token.model_dump_json())
 
     async def process_stream(
-            self,
-            stream: AsyncGenerator[tuple[str, Any]],
-            run_id: UUID,
-            span: LangfuseSpan | None = None,
+        self,
+        stream: AsyncGenerator[tuple[str, Any]],
+        run_id: UUID,
+        span: LangfuseSpan | None = None,
     ) -> AsyncGenerator[BaseEvent]:
-
         strategy: dict[StreamMode, Callable[[Any], Iterable[list[Any]]]] = {
             StreamMode.UPDATES: lambda payload: [self._flatten_updates(payload)],
             StreamMode.CUSTOM: lambda payload: [self._wrap_as_list(payload)],

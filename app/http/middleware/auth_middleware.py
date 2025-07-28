@@ -29,7 +29,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         return auth_token
 
-    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Any:
+    async def dispatch(
+        self, request: Request, call_next: RequestResponseEndpoint
+    ) -> Any:
         if not any(request.url.path.startswith(path) for path in self.for_paths):
             return await call_next(request)
 
@@ -39,8 +41,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
             logger.debug(f"Auth token: {auth_token}")
 
-            decoded_auth_token = json.loads(base64.b64decode(auth_token).decode("utf-8"))
-            user = await UserRepository.get_user_by_id(decoded_auth_token.get("user_id"))
+            decoded_auth_token = json.loads(
+                base64.b64decode(auth_token).decode("utf-8")
+            )
+            user = await UserRepository.get_user_by_id(
+                decoded_auth_token.get("user_id")
+            )
             if not user:
                 return JSONResponse(status_code=401, content={"detail": "Invalid user"})
             request.state.user = user
@@ -48,6 +54,5 @@ class AuthMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             logger.error(f"Authentication error: {str(e)}")
             return JSONResponse(
-                status_code=401,
-                content={"detail": "Authentication failed"}
+                status_code=401, content={"detail": "Authentication failed"}
             )

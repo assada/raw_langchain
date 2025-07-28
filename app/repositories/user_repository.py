@@ -24,7 +24,9 @@ class UserRepository:
             return user
 
         except ValueError as ve:
-            raise HTTPException(status_code=400, detail="Invalid user ID format") from ve
+            raise HTTPException(
+                status_code=400, detail="Invalid user ID format"
+            ) from ve
         except HTTPException:
             raise
         except Exception as e:

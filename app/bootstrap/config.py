@@ -38,6 +38,9 @@ def get_config() -> AppConfig:
         static_files_directory=os.getenv("STATIC_FILES_DIR", "frontend/dist"),
         secret_key=os.getenv("SECRET_KEY"),
         cors_origins=os.getenv("CORS_ORIGINS", "*").split(","),
-        database_url=os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/raw_langgraph"),
+        database_url=os.getenv(
+            "DATABASE_URL",
+            "postgresql://postgres:postgres@localhost:5432/raw_langgraph",
+        ),
         checkpoint_type=os.getenv("CHECKPOINT_TYPE", "memory"),
     )

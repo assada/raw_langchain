@@ -32,4 +32,5 @@ class DatabaseConnectionFactory:
         from app.infrastructure.database.postgresql_connection import (
             PostgreSQLConnection,
         )
+
         return PostgreSQLConnection(config)

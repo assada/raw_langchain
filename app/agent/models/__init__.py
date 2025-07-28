@@ -13,5 +13,5 @@ __all__ = [
     "HumanMessage",
     "CustomUIMessage",
     "Token",
-    "ChatMessage"
+    "ChatMessage",
 ]

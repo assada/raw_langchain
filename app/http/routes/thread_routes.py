@@ -20,8 +20,8 @@ thread_controller = ThreadController(get_config())
     responses={"404": {"model": ErrorResponse}, "422": {"model": ErrorResponse}},
 )
 async def get_thread(
-        request: Request,
-        thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
+    request: Request,
+    thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
 ) -> dict[str, str | Any]:
     return {
         "thread_id": thread.id,
@@ -29,9 +29,11 @@ async def get_thread(
         "updated_at": datetime.now(tz=UTC).isoformat(),
         "metadata": {
             "title": "Thread Title",
-            "user_id": request.state.user.id if request and request.state.user else None,
+            "user_id": request.state.user.id
+            if request and request.state.user
+            else None,
         },
-        "status": "idle"
+        "status": "idle",
     }
 
 
@@ -42,8 +44,8 @@ async def get_thread(
     responses={"404": {"model": ErrorResponse}, "422": {"model": ErrorResponse}},
 )
 async def delete_thread(
-        request: Request,
-        thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
+    request: Request,
+    thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
 ) -> ErrorResponse | None:
     # await ThreadRepository.delete_thread(thread.id)
     return None
@@ -51,20 +53,19 @@ async def delete_thread(
 
 @thread_router.get(
     "/threads/{thread_id}/history",
-    responses={"404": {"model": ErrorResponse}, "422": {"model": ErrorResponse}}
+    responses={"404": {"model": ErrorResponse}, "422": {"model": ErrorResponse}},
 )
 async def get_thread_history(
-        request: Request,
-        thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
-
+    request: Request,
+    thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
 ) -> EventSourceResponse:
     return await thread_controller.get_thread_history(request.state.user, thread)
 
 
 @thread_router.post("/threads/{thread_id}/feedback")
 async def post_thread_feedback(
-        request: Request,
-        request_body: FeedbackRequest,
-        thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
+    request: Request,
+    request_body: FeedbackRequest,
+    thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
 ) -> dict[str, str]:
     return await thread_controller.feedback(request_body, request.state.user, thread)

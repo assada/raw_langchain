@@ -9,10 +9,9 @@ class BaseEvent(BaseModel):
     data: str = Field(..., description="The data of the event")
 
     @classmethod
-    def from_payload(cls, event: str, payload: dict[str, Any], source: str | None = None) -> "BaseEvent":
+    def from_payload(
+        cls, event: str, payload: dict[str, Any], source: str | None = None
+    ) -> "BaseEvent":
         if source:
             payload["source"] = source
-        return cls(
-            event=event,
-            data=json.dumps(payload)
-        )
+        return cls(event=event, data=json.dumps(payload))

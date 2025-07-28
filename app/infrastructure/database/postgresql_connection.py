@@ -27,7 +27,9 @@ class PostgreSQLConnection(DatabaseConnection):
         return self.config.database_url
 
     def get_sync_connection(self) -> None:
-        raise NotImplementedError("Sync connection not supported in async implementation")
+        raise NotImplementedError(
+            "Sync connection not supported in async implementation"
+        )
 
     async def get_async_connection(self) -> AsyncConnection:
         pool = await self.get_pool()
@@ -44,7 +46,7 @@ class PostgreSQLConnection(DatabaseConnection):
                     conninfo=self.get_connection_string(),
                     min_size=1,
                     max_size=20,
-                    kwargs=self._connection_kwargs
+                    kwargs=self._connection_kwargs,
                 )
                 await self._pool.wait()
                 logger.debug("PostgreSQL connection pool initialized")

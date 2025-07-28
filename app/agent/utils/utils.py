@@ -81,7 +81,9 @@ def to_chat_message(message: BaseMessage, trace_id: str | None = None) -> ChatMe
 
 @to_chat_message.register
 def _(message: HumanMessage, trace_id: str | None = None) -> ChatMessage:
-    return _attach_trace(CustomHumanMessage(content=concat_text(message.content)), trace_id)
+    return _attach_trace(
+        CustomHumanMessage(content=concat_text(message.content)), trace_id
+    )
 
 
 @to_chat_message.register

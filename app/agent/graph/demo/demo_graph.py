@@ -16,7 +16,9 @@ logger = logging.getLogger(__name__)
 
 
 class DemoGraph(Graph):
-    def __init__(self, checkpointer: BaseCheckpointSaver[Any], prompt_provider: PromptProvider):
+    def __init__(
+        self, checkpointer: BaseCheckpointSaver[Any], prompt_provider: PromptProvider
+    ):
         super().__init__(checkpointer, prompt_provider)
 
     @property
@@ -38,8 +40,7 @@ class DemoGraph(Graph):
             return "tools"
 
         builder: StateGraph[State, BaseState, Any] = StateGraph(
-            state_schema=State,
-            input_schema=BaseState
+            state_schema=State, input_schema=BaseState
         )
 
         builder.add_node("call_model", self.call_model)

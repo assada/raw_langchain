@@ -32,7 +32,9 @@ class ThreadController:
             self._langfuse = Langfuse(debug=False)
 
             if self._checkpointer_provider is None:
-                self._checkpointer_provider = await CheckpointerFactory.create(self.config)  # type: ignore[assignment]
+                self._checkpointer_provider = await CheckpointerFactory.create(
+                    self.config
+                )  # type: ignore[assignment]
 
             checkpointer = await self._checkpointer_provider.get_checkpointer()  # type: ignore[union-attr]
             prompt_provider = LangfusePromptProvider(self._langfuse)
@@ -40,10 +42,10 @@ class ThreadController:
             self._agent_service = AgentService(self._graph, self._langfuse)
 
     async def stream(
-            self,
-            query: dict[str, Any] | list[Any] | str | float | bool | None,
-            thread_id: UUID | None,
-            metadata: dict[str, Any] | None,
+        self,
+        query: dict[str, Any] | list[Any] | str | float | bool | None,
+        thread_id: UUID | None,
+        metadata: dict[str, Any] | None,
     ) -> EventSourceResponse:
         if not metadata or "user_id" not in metadata:
             raise HTTPException(status_code=400, detail="User is required")
@@ -63,16 +65,16 @@ class ThreadController:
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
                     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-                }
+                },
             )
         except Exception as e:
             logger.error(f"Error processing thread request: {str(e)}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     async def get_thread_history(
-            self,
-            user: User = Depends(UserRepository.get_user_by_id),  # noqa: B008
-            thread: Thread = Depends(ThreadRepository.get_thread_by_id)  # noqa: B008
+        self,
+        user: User = Depends(UserRepository.get_user_by_id),  # noqa: B008
+        thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
     ) -> EventSourceResponse:
         try:
             await self._initialize()
@@ -84,22 +86,19 @@ class ThreadController:
                     "Access-Control-Allow-Origin": "*",
                     "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
                     "Access-Control-Allow-Headers": "Content-Type, Authorization",
-                }
+                },
             )
         except Exception as e:
             logger.error(f"Error fetching thread history: {str(e)}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
     async def feedback(
-            self,
-            request: FeedbackRequest,
-            user: User = Depends(UserRepository.get_user_by_id),  # noqa: B008
-            thread: Thread = Depends(ThreadRepository.get_thread_by_id)  # noqa: B008
+        self,
+        request: FeedbackRequest,
+        user: User = Depends(UserRepository.get_user_by_id),  # noqa: B008
+        thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
     ) -> dict[str, str]:
         await self._initialize()
         return await self._agent_service.add_feedback(  # type: ignore[union-attr]
-            trace=request.trace_id,
-            feedback=request.feedback,
-            thread=thread,
-            user=user
+            trace=request.trace_id, feedback=request.feedback, thread=thread, user=user
         )

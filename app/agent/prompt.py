@@ -40,15 +40,15 @@ class LangfusePromptProvider(PromptProvider):
         self._client = client
 
     def get_prompt(self, prompt_name: str, label: str, fallback: Prompt) -> Prompt:
-        langfuse_prompt = self._client.get_prompt(name=prompt_name, label=label, fallback=fallback.content)
+        langfuse_prompt = self._client.get_prompt(
+            name=prompt_name, label=label, fallback=fallback.content
+        )
 
         return Prompt(
             source=PromptSource.LANGFUSE,
             content=langfuse_prompt.get_langchain_prompt(),
-            config=langfuse_prompt.config if hasattr(langfuse_prompt, 'config') else {},
-            metadata={
-                "langfuse_prompt": langfuse_prompt
-            }
+            config=langfuse_prompt.config if hasattr(langfuse_prompt, "config") else {},
+            metadata={"langfuse_prompt": langfuse_prompt},
         )
 
 

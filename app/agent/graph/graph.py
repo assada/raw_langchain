@@ -26,9 +26,9 @@ class ModelResponse(TypedDict):
 
 class Graph(ABC):
     def __init__(
-            self,
-            checkpointer: BaseCheckpointSaver[Any],
-            prompt_provider: PromptProvider,
+        self,
+        checkpointer: BaseCheckpointSaver[Any],
+        prompt_provider: PromptProvider,
     ):
         self._checkpointer = checkpointer
         self._prompt_provider = prompt_provider
@@ -49,12 +49,15 @@ class Graph(ABC):
         cfg_model = cfg.get("model", "")
         provider, model = cfg_model.split("/", 1)
 
-        return cast(BaseChatModel, init_chat_model(
-            model,
-            model_provider=provider,
-            temperature=cfg.get("temperature"),
-            max_tokens=cfg.get("max_tokens"),
-        ))
+        return cast(
+            BaseChatModel,
+            init_chat_model(
+                model,
+                model_provider=provider,
+                temperature=cfg.get("temperature"),
+                max_tokens=cfg.get("max_tokens"),
+            ),
+        )
 
     def get_prompt_name(self) -> str:
         """Get the prompt name. Override if different from graph_name."""
@@ -66,11 +69,14 @@ class Graph(ABC):
 
     def get_prompt_fallback(self) -> Prompt:
         """Get the fallback prompt text."""
-        return Prompt(content="You are a helpful assistant.", config={
-            "model": self.get_default_model(),
-            "temperature": self.get_default_temperature(),
-            "max_tokens": self.get_max_tokens(),
-        })
+        return Prompt(
+            content="You are a helpful assistant.",
+            config={
+                "model": self.get_default_model(),
+                "temperature": self.get_default_temperature(),
+                "max_tokens": self.get_max_tokens(),
+            },
+        )
 
     def get_default_model(self) -> str:
         """Get the default model name."""
@@ -95,9 +101,9 @@ class Graph(ABC):
     def is_emergency_stop_needed(self, state: BaseState, response: AIMessage) -> bool:
         """Check if emergency stop is needed. Override for custom emergency stop logic."""
         return (
-                hasattr(state, 'is_last_step') and
-                getattr(state, 'is_last_step', False) and
-                hasattr(response, "tool_calls")
+            hasattr(state, "is_last_step")
+            and getattr(state, "is_last_step", False)
+            and hasattr(response, "tool_calls")
         )
 
     def create_emergency_response(self, response: AIMessage) -> AIMessage:
@@ -111,23 +117,22 @@ class Graph(ABC):
     def _with_tools(model: Any, tools: list[Any] | None = None) -> Any:
         return model.bind_tools(tools) if tools else model
 
-    async def call_model(self, state: BaseState, config: RunnableConfig) -> ModelResponse:
+    async def call_model(
+        self, state: BaseState, config: RunnableConfig
+    ) -> ModelResponse:
         """Base implementation of call_model. Can be overridden if needed."""
         prompt = self._prompt_provider.get_prompt(
-            self.get_prompt_name(),
-            self.get_prompt_label(),
-            self.get_prompt_fallback()
+            self.get_prompt_name(), self.get_prompt_label(), self.get_prompt_fallback()
         )
 
         model = self._with_tools(self.get_model(prompt), self.get_tools())
 
-        template = (
-            ChatPromptTemplate.from_messages([
+        template = ChatPromptTemplate.from_messages(
+            [
                 ("system", prompt.content),
                 MessagesPlaceholder("history"),
-            ])
-            .partial(**self.get_prompt_placeholders())
-        )
+            ]
+        ).partial(**self.get_prompt_placeholders())
         template.metadata = prompt.metadata
 
         chain = template | model
@@ -147,8 +152,11 @@ class Graph(ABC):
 
         return {
             "messages": [response],
-            "message_trace_map": [*state.message_trace_map, {
-                "id": response.id,
-                "trace_id": metadata.get("trace_id"),
-            }]
+            "message_trace_map": [
+                *state.message_trace_map,
+                {
+                    "id": response.id,
+                    "trace_id": metadata.get("trace_id"),
+                },
+            ],
         }
