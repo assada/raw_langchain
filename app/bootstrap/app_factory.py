@@ -3,14 +3,16 @@ from uuid import uuid4
 from asgi_correlation_id import CorrelationIdMiddleware
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
+
 # from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from prometheus_fastapi_instrumentator import Instrumentator
 
 from app.http.middleware.auth_middleware import AuthMiddleware
-from app.http.middleware.cors_middleware import setup_cors_middleware, CORSConfig
+from app.http.middleware.cors_middleware import CORSConfig, setup_cors_middleware
 from app.utils.utils import is_valid_uuid4
+
+from ..http.routes import health_router, runs_router, thread_router
 from .config import AppConfig
-from ..http.routes import thread_router, runs_router, health_router
 
 
 def create_app(config: AppConfig) -> FastAPI:

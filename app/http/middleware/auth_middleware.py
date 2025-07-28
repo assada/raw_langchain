@@ -1,11 +1,11 @@
 import base64
 import json
 import logging
-from typing import Optional
+from typing import Any
 
-from fastapi import Request, HTTPException
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 
 from app.repositories import UserRepository
 
@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 
 # TODO: Absolute bullshit!
 class AuthMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, for_paths: Optional[list] = None):
+    def __init__(self, app: Any, for_paths: list[str] | None = None):
         super().__init__(app)
         # self.auth_service = AuthService()
         self.for_paths = for_paths or ["/api/v1/runs", "/api/v1/threads"]
 
-    def get_auth_token(self, auth_header: str):
+    def get_auth_token(self, auth_header: str) -> str:
         if not auth_header:
             raise HTTPException(status_code=401, detail="Unauthorized")
 
@@ -29,13 +29,13 @@ class AuthMiddleware(BaseHTTPMiddleware):
 
         return auth_token
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Any:
         if not any(request.url.path.startswith(path) for path in self.for_paths):
             return await call_next(request)
 
         logger.debug(f"Checking auth for path: {request.url.path}")
         try:
-            auth_token = self.get_auth_token(request.headers.get("Authorization"))
+            auth_token = self.get_auth_token(request.headers.get("Authorization") or "")
 
             logger.debug(f"Auth token: {auth_token}")
 

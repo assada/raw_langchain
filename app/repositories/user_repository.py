@@ -23,10 +23,10 @@ class UserRepository:
             logger.debug(f"Resolved user: {user.id} - {user.email}")
             return user
 
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid user ID format")
+        except ValueError as ve:
+            raise HTTPException(status_code=400, detail="Invalid user ID format") from ve
         except HTTPException:
             raise
         except Exception as e:
             logger.error(f"Error resolving user {user_id}: {str(e)}")
-            raise HTTPException(status_code=500, detail="Internal server error")
+            raise HTTPException(status_code=500, detail="Internal server error") from e

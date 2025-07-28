@@ -15,7 +15,7 @@ class CustomUIMessage(ChatMessage):
         description="Unique identifier for the UI component",
         examples=["weather_widget_123"],
     )
-    params: dict = Field(
+    params: dict[str, str] = Field(
         description="Parameters for the UI component",
         examples=[{"location": "Kyiv", "date": "2023-10-01"}],
     )

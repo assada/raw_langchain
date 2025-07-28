@@ -1,4 +1,5 @@
-from typing import Any, Callable, List
+from collections.abc import Callable
+from typing import Any
 
 from langgraph.config import get_stream_writer
 
@@ -9,7 +10,7 @@ async def get_weather(city: str) -> str:
     """Get weather for a given city."""
 
     writer = get_stream_writer()
-    if writer:
+    if writer is not None:
         writer(CustomUIMessage(
             type="ui",
             component="file_upload",
@@ -24,4 +25,4 @@ async def get_weather(city: str) -> str:
     return f"It's always sunny in {city}!"
 
 
-TOOLS: List[Callable[..., Any]] = [get_weather]
+TOOLS: list[Callable[..., Any]] = [get_weather]

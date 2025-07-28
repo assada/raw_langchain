@@ -1,8 +1,8 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
-from typing import Optional, Dict, Any
+from typing import Any
 
-from pydantic import BaseModel, Field, AwareDatetime
+from pydantic import AwareDatetime, BaseModel, Field
 
 
 class ThreadStatus(Enum):
@@ -27,9 +27,9 @@ class Thread(BaseModel):
         description="The last time the thread was updated.",
         examples=["2023-10-01T12:00:00Z"]
     )
-    metadata: Dict[str, Any] = Field(
+    metadata: dict[str, Any] = Field(
         ..., description="The thread metadata.", title="Metadata"
     )
-    status: Optional[ThreadStatus] = Field(
+    status: ThreadStatus | None = Field(
         default=ThreadStatus.idle, description="Thread status to filter on.", title="Thread Status"
     )

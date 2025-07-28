@@ -1,4 +1,3 @@
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -14,7 +13,7 @@ class FeedbackRequest(BaseModel):
         le=1,
         examples=[0, 1],
     )
-    agent_id: Optional[str] = Field(
+    agent_id: str | None = Field(
         None,
         description="The agent ID to run.",
         title="Agent Id",

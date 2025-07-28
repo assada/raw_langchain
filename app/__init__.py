@@ -1,4 +1,4 @@
-from .bootstrap import create_app, get_config, AppConfig
+from .bootstrap import AppConfig, create_app, get_config
 
 __all__ = [
     "create_app",

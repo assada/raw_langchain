@@ -14,6 +14,7 @@ class CheckpointerFactory:
     @classmethod
     async def create(cls, config: AppConfig) -> BaseCheckpointer:
         checkpoint_type = config.checkpoint_type.lower()
+        instance: BaseCheckpointer
 
         if checkpoint_type == "memory":
             instance = MemoryCheckpointer()

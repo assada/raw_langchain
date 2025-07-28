@@ -11,13 +11,13 @@ class ColoredFormatter(logging.Formatter):
         'CRITICAL': '\033[35m',   # magenta
     }
     RESET = '\033[0m'
-    
-    def format(self, record):
+
+    def format(self, record: logging.LogRecord) -> str:
         record_copy = logging.makeLogRecord(record.__dict__)
         color = self.COLORS.get(record_copy.levelname, '')
         colored_levelname = f'{color}{record_copy.levelname}{self.RESET}:{" " * (7 - len(record_copy.levelname))}'
         record_copy.levelname = colored_levelname
-        
+
         return super().format(record_copy)
 
 

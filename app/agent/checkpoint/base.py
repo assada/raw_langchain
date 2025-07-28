@@ -19,6 +19,6 @@ class BaseCheckpointer(ABC):
         pass
 
     @abstractmethod
-    def get_checkpointer(self) -> Any:
+    async def get_checkpointer(self) -> Any:
         """Get the actual checkpointer instance."""
         pass

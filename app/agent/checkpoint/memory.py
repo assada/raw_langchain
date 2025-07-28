@@ -1,17 +1,19 @@
-from functools import lru_cache
 import logging
+from functools import lru_cache
+
 from langgraph.checkpoint.memory import InMemorySaver
 
 from app.agent.checkpoint.base import BaseCheckpointer
 
 logger = logging.getLogger(__name__)
 
+
 @lru_cache()
 class MemoryCheckpointer(BaseCheckpointer):
     """Memory implementation of the checkpointer."""
 
-    def __init__(self):
-        self._checkpointer = None
+    def __init__(self) -> None:
+        self._checkpointer: InMemorySaver | None = None
 
     async def initialize(self) -> None:
         """Initialize the memory checkpointer."""
@@ -22,7 +24,10 @@ class MemoryCheckpointer(BaseCheckpointer):
     async def cleanup(self) -> None:
         """Clean up memory resources."""
         pass
-    
-    def get_checkpointer(self) -> InMemorySaver:
+
+    async def get_checkpointer(self) -> InMemorySaver:
         """Get the memory checkpointer instance."""
-        return self._checkpointer 
+        if self._checkpointer is None:
+            raise ValueError("Checkpointer has not been initialized.")
+
+        return self._checkpointer

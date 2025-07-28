@@ -8,13 +8,14 @@ from app.infrastructure.database.connection import DatabaseConnection
 
 logger = logging.getLogger(__name__)
 
+
 @lru_cache()
 class PostgresCheckpointer(BaseCheckpointer):
     """PostgreSQL implementation of the checkpointer."""
 
     def __init__(self, database_connection: DatabaseConnection):
         self.database_connection = database_connection
-        self._checkpointer = None
+        self._checkpointer: AsyncPostgresSaver | None = None
 
     async def initialize(self) -> None:
         """Initialize the PostgreSQL checkpointer."""
@@ -29,6 +30,9 @@ class PostgresCheckpointer(BaseCheckpointer):
         if self.database_connection:
             self.database_connection.close()
 
-    def get_checkpointer(self) -> AsyncPostgresSaver:
+    async def get_checkpointer(self) -> AsyncPostgresSaver:
         """Get the PostgreSQL checkpointer instance."""
-        return self._checkpointer 
+        if self._checkpointer is None:
+            raise ValueError("Checkpointer has not been initialized.")
+
+        return self._checkpointer

@@ -1,13 +1,13 @@
-from typing import Optional, Union, Dict, Any, List, Literal
+from typing import Any, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class Content(BaseModel):
     text: str
     type: Literal["text"]
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 class Content1(BaseModel):
@@ -15,7 +15,7 @@ class Content1(BaseModel):
         extra="allow",
     )
     type: str
-    metadata: Optional[Dict[str, Any]] = None
+    metadata: dict[str, Any] | None = None
 
 
 class Message(BaseModel):
@@ -23,28 +23,28 @@ class Message(BaseModel):
         extra="allow",
     )
     role: str = Field(..., description="The role of the message.", title="Role")
-    content: Union[str, List[Union[Content, Content1]]] = Field(
+    content: str | list[Content | Content1] = Field(
         ..., description="The content of the message.", title="Content"
     )
-    id: Optional[str] = Field(None, description="The ID of the message.", title="Id")
-    metadata: Optional[Dict[str, Any]] = Field(
+    id: str | None = Field(None, description="The ID of the message.", title="Id")
+    metadata: dict[str, Any] | None = Field(
         None, description="The metadata of the message.", title="Metadata"
     )
 
 
 class Run(BaseModel):
-    input: Union[Dict[str, Any], List, str, float, bool] = Field(
+    input: dict[str, Any] | list[Any] | str | float | bool | None = Field(
         None, description="The input to the agent.", title="Input"
     )
-    metadata: Optional[Dict[str, Any]] = Field(
+    metadata: dict[str, Any] | None = Field(
         None, description="Metadata to assign to the run.", title="Metadata"
     )
-    thread_id: UUID = Field(
+    thread_id: UUID | None = Field(
         None,
         description="The ID of the thread to run.",
         title="Thread Id",
     )
-    agent_id: Optional[str] = Field(
+    agent_id: str | None = Field(
         None,
         description="The agent ID to run. If not provided will use the default agent for this service.",
         title="Agent Id",

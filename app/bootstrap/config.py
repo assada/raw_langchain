@@ -1,5 +1,4 @@
 import os
-from typing import Optional
 
 from dotenv import load_dotenv
 from pydantic import BaseModel
@@ -15,14 +14,14 @@ class AppConfig(BaseModel):
 
     static_files_directory: str = "frontend/dist"
 
-    secret_key: Optional[str] = None
+    secret_key: str | None = None
 
-    cors_origins: list = ["*"]
+    cors_origins: list[str] = ["*"]
     cors_allow_credentials: bool = True
-    cors_allow_methods: list = ["*"]
-    cors_allow_headers: list = ["*"]
+    cors_allow_methods: list[str] = ["*"]
+    cors_allow_headers: list[str] = ["*"]
 
-    database_url: Optional[str] = None
+    database_url: str | None = None
     checkpoint_type: str = "memory"  # Options: memory, postgres
 
     class Config:

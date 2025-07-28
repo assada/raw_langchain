@@ -22,12 +22,14 @@ class DatabaseConnection(ABC):
         pass
 
     @abstractmethod
-    def close(self) -> None:
+    def close(self) -> Any:
         pass
 
 
 class DatabaseConnectionFactory:
     @staticmethod
     def create_connection(config: AppConfig) -> DatabaseConnection:
-        from app.infrastructure.database.postgresql_connection import PostgreSQLConnection
+        from app.infrastructure.database.postgresql_connection import (
+            PostgreSQLConnection,
+        )
         return PostgreSQLConnection(config)

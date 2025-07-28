@@ -1,16 +1,24 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Sequence, Any
+from collections.abc import Sequence
+from typing import Annotated
 
 from langchain_core.messages import AnyMessage
 from langgraph.graph import add_messages
-from typing_extensions import Annotated
+from langgraph.managed import IsLastStep
+from pydantic import BaseModel, Field
 
 
-@dataclass
-class BaseState:
-    messages: Annotated[Sequence[AnyMessage], add_messages] = field(
+class BaseState(BaseModel):
+    messages: Annotated[Sequence[AnyMessage], add_messages] = Field(
         default_factory=list
     )
-    message_trace_map: list[dict[str, Any]] = field(default_factory=list)
+    message_trace_map: list[dict[str, str | None]] = Field(default_factory=list)
+
+
+class State(BaseState):
+    is_last_step: IsLastStep = Field(default=False)
+
+    # retrieved_documents: List[Document] = field(default_factory=list)
+    # extracted_entities: Dict[str, Any] = field(default_factory=dict)
+    # api_connections: Dict[str, Any] = field(default_factory=dict)

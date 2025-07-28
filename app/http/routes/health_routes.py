@@ -9,7 +9,7 @@ health_router = APIRouter(prefix="/health", tags=["health"])
 
 
 @health_router.get("/")
-async def health_check():
+async def health_check() -> dict[str, str]:
     return {
         "status": "healthy",
         "timestamp": datetime.utcnow().isoformat(),
@@ -18,7 +18,7 @@ async def health_check():
 
 
 @health_router.get("/detailed")
-async def detailed_health_check():
+async def detailed_health_check() -> dict[str, str | dict[str, str]]:
     try:
         return {
             "status": "healthy",

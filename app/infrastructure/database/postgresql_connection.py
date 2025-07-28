@@ -1,5 +1,5 @@
 import logging
-from typing import Optional
+from typing import Any
 
 from psycopg import AsyncConnection
 from psycopg.rows import dict_row
@@ -14,16 +14,19 @@ logger = logging.getLogger(__name__)
 class PostgreSQLConnection(DatabaseConnection):
     def __init__(self, config: AppConfig):
         self.config = config
-        self._pool: Optional[AsyncConnectionPool] = None
+        self._pool: AsyncConnectionPool | None = None
         self._connection_kwargs = {
             "autocommit": True,  # Mandatory for checkpointing
             "row_factory": dict_row,  # Mandatory for checkpointing
         }
 
     def get_connection_string(self) -> str:
+        if not self.config.database_url:
+            raise ValueError("Database URL is not configured")
+
         return self.config.database_url
 
-    def get_sync_connection(self):
+    def get_sync_connection(self) -> None:
         raise NotImplementedError("Sync connection not supported in async implementation")
 
     async def get_async_connection(self) -> AsyncConnection:
@@ -51,7 +54,7 @@ class PostgreSQLConnection(DatabaseConnection):
 
         return self._pool
 
-    def close(self) -> None:
+    async def close(self) -> Any:
         if self._pool:
-            self._pool.close()
+            await self._pool.close()
             logger.debug("PostgreSQL connection pool closed")

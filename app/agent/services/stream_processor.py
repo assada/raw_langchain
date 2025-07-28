@@ -1,134 +1,165 @@
+from __future__ import annotations
+
 import inspect
 import json
 import logging
-from typing import Any, AsyncGenerator
+from collections.abc import AsyncGenerator, Callable, Iterable
+from enum import Enum
+from typing import Any
 from uuid import UUID
 
 from langchain_core.messages import AIMessage, AIMessageChunk
 from langfuse._client.span import LangfuseSpan
 
-from app.agent.models import Token
-from app.agent.services.events import TokenEvent, ErrorEvent, EndEvent
+from app.agent.models import AIMessage as CustomAIMessage
+from app.agent.models import HumanMessage, Token
+from app.agent.services.events import EndEvent, ErrorEvent, TokenEvent
 from app.agent.services.events.base_event import BaseEvent
-from app.agent.utils.utils import remove_tool_calls, langchain_to_chat_message, convert_message_content_to_string
+from app.agent.utils import (
+    concat_text,
+    strip_tool_calls,
+    to_chat_message,
+)
 
 logger = logging.getLogger(__name__)
 
 
+class StreamMode(str, Enum):
+    UPDATES = "updates"
+    CUSTOM = "custom"
+    MESSAGES = "messages"
+
+
 class StreamProcessor:
-    def __init__(self):
-        pass
+    _ai_signature = inspect.signature(AIMessage)
+    _ai_valid_keys = set(_ai_signature.parameters)
 
     @staticmethod
-    def _create_ai_message(parts: dict) -> AIMessage:
-        sig = inspect.signature(AIMessage)
-        valid_keys = set(sig.parameters)
-        filtered = {k: v for k, v in parts.items() if k in valid_keys}
+    def _create_ai_message(parts: dict[str, Any]) -> AIMessage:
+        filtered = {k: v for k, v in parts.items() if k in StreamProcessor._ai_valid_keys}
         return AIMessage(**filtered)
 
     @staticmethod
-    def _process_updates_stream(event: dict[str, Any]) -> list[Any]:
-        new_messages = []
-        for node, updates in event.items():
-            updates = updates or {}
-            update_messages = updates.get("messages", [])
-            new_messages.extend(update_messages)
-        return new_messages
+    def _flatten_updates(updates: dict[str, Any]) -> list[Any]:
+        return [
+            msg
+            for node_updates in updates.values()
+            for msg in (node_updates or {}).get("messages", [])
+        ]
 
     @staticmethod
-    def _process_custom_stream(event: Any) -> list[Any]:
+    def _wrap_as_list(event: Any) -> list[Any]:
         return [event]
 
-    def _process_messages_for_chat(self, messages: list[Any], run_id: UUID, span: LangfuseSpan = None) -> list[
-        BaseEvent]:
-        processed_messages = []
-        current_message: dict[str, Any] = {}
+    def _messages_to_events(
+            self,
+            messages: list[Any],
+            run_id: UUID,
+            span: LangfuseSpan | None,
+    ) -> list[BaseEvent]:
+        consolidated: list[Any] = []
+        current: dict[str, Any] = {}
 
         for message in messages:
             if isinstance(message, tuple):
                 key, value = message
-                current_message[key] = value
-            else:
-                if current_message:
-                    processed_messages.append(self._create_ai_message(current_message))
-                    current_message = {}
-                processed_messages.append(message)
+                current[key] = value
+                continue
 
-        if current_message:
-            processed_messages.append(self._create_ai_message(current_message))
+            if current:
+                consolidated.append(self._create_ai_message(current))
+                current = {}
 
-        events = []
-        for message in processed_messages:
+            consolidated.append(message)
+
+        if current:
+            consolidated.append(self._create_ai_message(current))
+
+        events: list[BaseEvent] = []
+        for message in consolidated:
             try:
-                chat_message = langchain_to_chat_message(message)
-                chat_message.run_id = str(run_id)
+                chat = to_chat_message(message)
+                chat.run_id = str(run_id)
 
                 if (
-                        chat_message.type == "human_message"
-                        and hasattr(message, 'content') and chat_message.content == message.content
+                        isinstance(chat, HumanMessage)
+                        and getattr(message, "content", None) == chat.content
                 ):
                     continue
-                if span is not None:
-                    if chat_message.type == "ai_message":
-                        chat_message.trace_id = span.trace_id
-                events.append(BaseEvent.from_payload(
-                    event=chat_message.type,
-                    payload=chat_message.model_dump(),
-                    source="stream"
-                ))
-            except Exception as e:
-                logger.error(f"Error parsing message: {e}")
+
+                if span and isinstance(chat, CustomAIMessage):
+                    chat.trace_id = span.trace_id
+
+                events.append(
+                    BaseEvent.from_payload(
+                        event=chat.type,
+                        payload=chat.model_dump(),
+                        source="stream",
+                    )
+                )
+            except Exception as exc:  # noqa: BLE001
+                logger.exception("Failed to parse message: %s", exc)
                 events.append(ErrorEvent(data=json.dumps({"content": "Unexpected error"})))
 
         return events
 
     @staticmethod
-    def _process_message_stream(event: tuple, run_id: UUID) -> TokenEvent | None:
+    def _token_event(
+            event: tuple[AIMessageChunk, dict[str, Any]],
+            run_id: UUID,
+    ) -> TokenEvent | None:
         msg, metadata = event
-
-        if "skip_stream" in metadata.get("tags", []):
+        if (
+                not isinstance(msg, AIMessageChunk)
+                or "skip_stream" in metadata.get("tags", [])
+        ):
             return None
 
-        if not isinstance(msg, AIMessageChunk):
-            return None
-
-        content = remove_tool_calls(msg.content)
+        content = strip_tool_calls(msg.content)
         if not content:
             return None
 
         token = Token(
             run_id=str(run_id),
-            content=convert_message_content_to_string(content),
+            content=concat_text(content),
         )
         return TokenEvent(data=token.model_dump_json())
 
-    async def process_stream(self, stream, run_id: UUID, span: LangfuseSpan = None) -> AsyncGenerator[BaseEvent, None]:
-        """TODO: I am not sure about direct passing Span.
-        Maybe we can just use Langfuse client directly to get current span.
-        """
-        async for stream_event in stream:
-            if not isinstance(stream_event, tuple):
+    async def process_stream(
+            self,
+            stream: AsyncGenerator[tuple[str, Any]],
+            run_id: UUID,
+            span: LangfuseSpan | None = None,
+    ) -> AsyncGenerator[BaseEvent]:
+
+        strategy: dict[StreamMode, Callable[[Any], Iterable[list[Any]]]] = {
+            StreamMode.UPDATES: lambda payload: [self._flatten_updates(payload)],
+            StreamMode.CUSTOM: lambda payload: [self._wrap_as_list(payload)],
+            StreamMode.MESSAGES: lambda _: [],
+        }
+
+        async for mode_str, payload in stream:
+            try:
+                mode = StreamMode(mode_str)
+            except ValueError:
+                logger.warning("Unknown stream mode '%s' – skipping", mode_str)
                 continue
 
-            stream_mode, event = stream_event
+            if mode is StreamMode.MESSAGES:
+                token = self._token_event(payload, run_id)
+                if token:
+                    yield token
+                continue
 
-            if stream_mode == "updates":
-                new_messages = self._process_updates_stream(event)
-                if new_messages:
-                    events = self._process_messages_for_chat(new_messages, run_id, span)
-                    for chat_event in events:
-                        yield chat_event
+            for messages in strategy[mode](payload):
+                if not messages:
+                    continue
 
-            elif stream_mode == "custom":
-                new_messages = self._process_custom_stream(event)
-                if new_messages:
-                    events = self._process_messages_for_chat(new_messages, run_id, span)
-                    for chat_event in events:
-                        yield chat_event
+                events = self._messages_to_events(messages, run_id, span)
+                if span:
+                    span.update(output=messages)
 
-            elif stream_mode == "messages":
-                token_event = self._process_message_stream(event, run_id)
-                if token_event:
-                    yield token_event
+                for evt in events:
+                    yield evt
 
-        yield EndEvent(data=json.dumps({"run_id": str(run_id), 'status': 'completed'}))
+        yield EndEvent(data=json.dumps({"run_id": str(run_id), "status": "completed"}))
