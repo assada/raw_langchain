@@ -32,7 +32,7 @@ jobs:
           echo "## 🔍 Ruff Linter Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
-          uv run ruff check . --output-format=text 2>&1 | tee ruff-results.txt || true
+          uv run ruff check . --output-format=github 2>&1 | tee ruff-results.txt || true
           cat ruff-results.txt >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
@@ -62,7 +62,7 @@ jobs:
       - name: Check for critical issues
         run: |
           # Check if there are any critical ruff issues
-          RUFF_ERRORS=$(uv run ruff check . --output-format=text 2>&1 || true)
+          RUFF_ERRORS=$(uv run ruff check . --output-format=github 2>&1 || true)
           # Check if there are any mypy errors
           MYPY_ERRORS=$(uv run mypy --strict app/ 2>&1 || true)
           
