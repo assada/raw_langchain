@@ -4,8 +4,8 @@ FastAPI-based boilerplate for building LangGraph-powered agents with streaming, 
 
 [![CI](https://github.com/assada/agent_template/actions/workflows/ci.yml/badge.svg)](https://github.com/assada/raw_langgraph/actions/workflows/ci.yml)
 
-
 ## TL;DR
+
 This is a minimal and extendable template for running LangGraph agents over HTTP.
 
 It supports:
@@ -66,26 +66,28 @@ PRs welcome for:
 - [x] Add a way to add tools to the agent
 - [x] Add a way to add a database to the agent (memory, checkpoints, feedback?, etc)
 - [x] Implement graph instead of simple agent
-- [ ] 	~~Keep alive SSE connection until the user closes the browser tab (??)~~
-- [ ] Add a way to validate the user's access token (OAuth2)
 - [x] Refactor the structure of the project. We need to separate general fastapi app from the agent app.
 - [x] Add more model configuration options (temperature, top_p, etc)
 - [x] Add a way to get a thread history
-- [ ] **50/50 DONE** Store the thread history in the database (with all custom messages and metadata)
-- [ ] Normalize FastApi headers/request/middleware
-- [ ] Add a way to define a custom agent in config?
+- [x] Normalize FastApi headers/request/middleware
 - [x] Add Langfuse integration
+- [x] Add tests
+- [x] refactor checkpointer shit factory
+- [ ] 🟠 [**raw api implemented**] thread management Create/Update/Delete (thread model(ulid, user_id, created/updated,
+  title, status[]))
+- [ ] 🟠 [**50/50 DONE**] Store the thread history in the database (with all custom messages and metadata)
+- [ ] 🟠 Add a way to define a custom agent in config?
 - [ ] ~~Add Langsmith integration~~
-- [ ] Add tests
-- [ ] Add evaluation metrics
-- [ ] Add *one more* abstraction layer so the agent can use different frameworks (LangGraph, LlamaIndex, etc.)
-- [ ] Add even more fucking abstractions to make it independent of observability tools (LangFuse, LangSmith, Grafana
+- [ ] ~~Keep alive SSE connection until the user closes the browser tab (??)~~
+- [ ] 🟡 Add a way to validate the user's access token (OAuth2)
+- [ ] 🟡 Add evaluation metrics
+- [ ] 🔴 Add *one more* abstraction layer so the agent can use different frameworks (LangGraph, LlamaIndex, etc.)
+- [ ] 🟠 Add even more fucking abstractions to make it independent of observability tools (LangFuse, LangSmith, Grafana
   Alloy, or whatever the fuck else)
-- [ ] Long-Term memory for each user. I want to add to chat application for real-time per thread prompt tuning - memory
+- [ ] ⚪ Long-Term memory for each user. I want to add to chat application for real-time per thread prompt tuning - memory
   insights, response strategies, etc. But this is more about agent implementation not template core. Graph node as "
   addon package?" LOL! https://i.imgur.com/k1jk3cx.png here we go again!
-- [ ] **raw api implemented** thread management Create/Update/Delete (thread model(ulid, user_id, created/updated,
-  title, status[]))
-- [x] refactor checkpointer shit factory
-- [ ] Guardrails ([LLMGuard implementation](https://github.com/assada/agent_template/tree/feat/guardrails) or handle
+- [ ] ⚪ Guardrails ([LLMGuard implementation](https://github.com/assada/agent_template/tree/feat/guardrails) or handle
   by [LiteLLM](https://docs.litellm.ai/docs/proxy/guardrails/quick_start))
+
+⚪ - LOWEST priority | 🟡 - LOW priority | 🟠 - MID priority | 🔴 - HIGH priority | 🟣 - BLOCKER

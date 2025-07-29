@@ -4,6 +4,10 @@ version = "0.0.1"
 description = "A test application"
 readme = "README.md"
 requires-python = ">=3.13"
+license = { text = "MIT" }
+authors = [
+    { name = "Oleksii Ilienko", email = "assada.ua@gmail.com" }
+]
 dependencies = [
     "asgi-correlation-id>=4.3.4",
     "asyncpg>=0.30.0",
@@ -20,12 +24,19 @@ dependencies = [
     "prometheus-fastapi-instrumentator>=7.1.0",
     "psycopg[binary,pool]>=3.2.9",
     "pyright>=1.1.403",
+    "pytest>=8.4.1",
+    "pytest-asyncio>=1.1.0",
+    "pytest-cov>=6.2.0",
     "python-dotenv>=1.1.1",
     "python-multipart>=0.0.20",
     "ruff>=0.12.5",
     "sse-starlette==2.4.1",
     "uvicorn>=0.35.0",
 ]
+
+[project.urls]
+Homepage = "https://www.djangoproject.com/"
+Source = "https://github.com/django/django"
 
 [tool.mypy]
 python_version = "3.13"
@@ -43,3 +54,38 @@ target-version = "py313"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "C4", "T20"]
 ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+]
