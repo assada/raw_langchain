@@ -48,6 +48,17 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
+      - name: Run Pyright type checker
+        id: pyright
+        run: |
+          echo "## ⚡ Pyright Type Checker Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          uv run pyright ./app/ 2>&1 | tee pyright-results.txt || true
+          cat pyright-results.txt >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
       - name: Run Ruff formatter check
         id: ruff-format
         run: |
@@ -65,18 +76,22 @@ jobs:
           RUFF_ERRORS=$(uv run ruff check . --output-format=github 2>&1 || true)
           # Check if there are any mypy errors
           MYPY_ERRORS=$(uv run mypy --strict app/ 2>&1 || true)
+          # Check if there are any pyright errors
+          PYRIGHT_ERRORS=$(uv run pyright ./app/ 2>&1 || true)
           
           # Count actual errors (not just warnings)
           RUFF_ERROR_COUNT=$(echo "$RUFF_ERRORS" | grep -c "error:" || true)
           MYPY_ERROR_COUNT=$(echo "$MYPY_ERRORS" | grep -c "error:" || true)
+          PYRIGHT_ERROR_COUNT=$(echo "$PYRIGHT_ERRORS" | grep -c "error:" || true)
           
           echo "## 📊 Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- **Ruff errors found:** $RUFF_ERROR_COUNT" >> $GITHUB_STEP_SUMMARY
           echo "- **MyPy errors found:** $MYPY_ERROR_COUNT" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pyright errors found:** $PYRIGHT_ERROR_COUNT" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [ "$RUFF_ERROR_COUNT" -gt 0 ] || [ "$MYPY_ERROR_COUNT" -gt 0 ]; then
+          if [ "$RUFF_ERROR_COUNT" -gt 0 ] || [ "$MYPY_ERROR_COUNT" -gt 0 ] || [ "$PYRIGHT_ERROR_COUNT" -gt 0 ]; then
             echo "❌ **CI Failed:** Critical issues found that need to be fixed." >> $GITHUB_STEP_SUMMARY
             exit 1
           else
@@ -91,5 +106,6 @@ jobs:
           path: |
             ruff-results.txt
             mypy-results.txt
+            pyright-results.txt
             format-results.txt
           retention-days: 30 

@@ -40,7 +40,7 @@ def get_config() -> AppConfig:
         cors_origins=os.getenv("CORS_ORIGINS", "*").split(","),
         database_url=os.getenv(
             "DATABASE_URL",
-            "postgresql://postgres:postgres@localhost:5432/raw_langgraph",
+            "postgresql://postgres:postgres@localhost:5432/agent_template",
         ),
         checkpoint_type=os.getenv("CHECKPOINT_TYPE", "memory"),
     )

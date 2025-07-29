@@ -1,9 +1,9 @@
 services:
   db:
     image: pgvector/pgvector:pg16
-    container_name: raw_langgraph
+    container_name: agent_template
     environment:
-      POSTGRES_DB: raw_langgraph
+      POSTGRES_DB: agent_template
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_HOST_AUTH_METHOD: trust
@@ -20,7 +20,7 @@ services:
 
   app:
     build: .
-    container_name: raw_langchain_app
+    container_name: agent_template_app
     ports:
       - "8000:8000"
     depends_on:
@@ -31,7 +31,7 @@ services:
       - PORT=8000
       - DEBUG=true
       - RELOAD=true
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/raw_langgraph
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/agent_template
     volumes:
       - .:/app
       - /app/node_modules

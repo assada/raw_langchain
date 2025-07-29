@@ -1,12 +1,11 @@
-from typing import Literal
 
 from pydantic import Field
 
-from .chat_message import ChatMessage
+from .chat_message import ChatMessage, MessageType
 
 
 class HumanMessage(ChatMessage):
-    type: Literal["human_message"] = "human_message"
+    type: MessageType = "human_message"
     content: str = Field(
         description="Message content",
         examples=["What is the weather like today?"],

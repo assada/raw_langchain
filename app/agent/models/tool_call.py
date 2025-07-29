@@ -1,12 +1,12 @@
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import Field
 
-from .chat_message import ChatMessage
+from .chat_message import ChatMessage, MessageType
 
 
 class ToolCall(ChatMessage):
-    type: Literal["tool_call"] = "tool_call"
+    type: MessageType = "tool_call"
     name: str = Field(
         description="Name of the tool to call",
         examples=["weather_tool"],

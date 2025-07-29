@@ -1,12 +1,11 @@
-from typing import Literal
 
 from pydantic import Field
 
-from .chat_message import ChatMessage
+from .chat_message import ChatMessage, MessageType
 
 
 class ToolResult(ChatMessage):
-    type: Literal["tool_result"] = "tool_result"
+    type: MessageType = "tool_result"
     tool_name: str = Field(
         description="Name of the tool that produced this result",
         examples=["weather_tool"],

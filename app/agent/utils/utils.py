@@ -91,7 +91,7 @@ def _(message: AIMessage, trace_id: str | None = None) -> ChatMessage:
     if message.tool_calls:
         tc = message.tool_calls[0]
         return _attach_trace(
-            ToolCall(id=message.id, name=tc["name"], args=tc["args"]), trace_id
+            ToolCall(id=message.id or "", name=tc["name"], args=tc["args"]), trace_id
         )
 
     return _attach_trace(
@@ -103,7 +103,7 @@ def _(message: AIMessage, trace_id: str | None = None) -> ChatMessage:
 def _(message: ToolMessage, trace_id: str | None = None) -> ChatMessage:
     return _attach_trace(
         ToolResult(
-            tool_name=message.name,
+            tool_name=message.name or "unknown_tool",
             content=concat_text(message.content),
             tool_call_id=message.tool_call_id,
         ),
@@ -114,7 +114,7 @@ def _(message: ToolMessage, trace_id: str | None = None) -> ChatMessage:
 @to_chat_message.register
 def _(message: LChatMessage, trace_id: str | None = None) -> ChatMessage:
     if message.role == "custom":
-        return _attach_trace(CustomAIMessage(content=message.content[0]), trace_id)
+        return _attach_trace(CustomAIMessage(content=str(message.content[0])), trace_id)
 
     raise ValueError(f"Unsupported chat message role: {message.role}")
 

@@ -38,7 +38,7 @@ shell: ## Access app container shell
 	docker-compose exec app bash
 
 db-shell: ## Access database shell
-	docker-compose exec db psql -U postgres -d raw_langchain
+	docker-compose exec db psql -U postgres -d agent_template
 
 clean: ## Remove containers, networks, and volumes
 	docker-compose down -v --remove-orphans
