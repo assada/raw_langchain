@@ -13,8 +13,9 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph.state import CompiledStateGraph
 
-from app.agent.langgraph.base_state import BaseState, State
 from app.agent.prompt import Prompt, PromptProvider
+
+from .base_state import BaseState, State
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,7 @@ class Graph(ABC):
         self,
         checkpointer: BaseCheckpointSaver[Any],
         prompt_provider: PromptProvider,
+        custom_settings: dict[str, Any] | None = None,
     ):
         self._checkpointer = checkpointer
         self._prompt_provider = prompt_provider

@@ -1,0 +1,13 @@
+{
+  "name": "demo_agent",
+  "description": "Demo conversational agent with tool support",
+  "production": {
+    "framework": "langgraph",
+    "class_name": "agents.langgraph.demo.demo_graph.DemoGraph",
+    "prompt_source": "langfuse",
+    "custom_settings": {
+      "default_system_prompt": "You are a helpful AI assistant with access to tools.",
+      "max_iterations": 10
+    }
+  }
+}

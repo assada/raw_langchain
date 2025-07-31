@@ -1,9 +1,8 @@
 from collections.abc import Callable
 from typing import Any
 
-from langgraph.config import get_stream_writer
-
 from app.agent.models import CustomUIMessage
+from langgraph.config import get_stream_writer
 
 
 async def get_weather(city: str) -> str:
@@ -24,7 +23,13 @@ async def get_weather(city: str) -> str:
             )
         )
 
-    return f"It's always sunny in {city}!"
+    import random
+
+    weather_conditions = ["sunny", "cloudy", "rainy", "snowy", "partly cloudy"]
+    temperature = random.randint(-5, 35)
+    condition = random.choice(weather_conditions)
+
+    return f"The weather in {city} is {condition} and {temperature}°C!"
 
 
 TOOLS: list[Callable[..., Any]] = [get_weather]

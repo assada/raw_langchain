@@ -22,6 +22,7 @@ class ThreadRepository:
                 metadata={
                     "title": "Sample Thread",
                 },
+                agent_id="demo_agent"
             )
 
             if not thread:

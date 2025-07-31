@@ -21,6 +21,10 @@ class AppConfig(BaseModel):
     cors_allow_methods: list[str] = ["*"]
     cors_allow_headers: list[str] = ["*"]
 
+    environment: str = "production"
+    agent_config_dir: str = "agents/config"
+    prompt_dir: str = "agents/prompt"
+
     database_url: str | None = None
     checkpoint_type: str = "memory"  # Options: memory, postgres
 
@@ -43,4 +47,7 @@ def get_config() -> AppConfig:
             "postgresql://postgres:postgres@localhost:5432/agent_template",
         ),
         checkpoint_type=os.getenv("CHECKPOINT_TYPE", "memory"),
+        environment=os.getenv("ENVIRONMENT", "production"),
+        agent_config_dir=os.getenv("AGENT_CONFIG_DIR", "agents/config"),
+        prompt_dir=os.getenv("AGENT_PROMPT_DIR", "agents/prompt"),
     )

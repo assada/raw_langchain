@@ -1,10 +1,11 @@
 import logging
 
-from app.agent.langgraph.checkpoint.base import BaseCheckpointer
-from app.agent.langgraph.checkpoint.memory import MemoryCheckpointer
-from app.agent.langgraph.checkpoint.postgres import PostgresCheckpointer
 from app.bootstrap.config import AppConfig
 from app.infrastructure.database.connection import DatabaseConnectionFactory
+
+from .base import BaseCheckpointer
+from .memory import MemoryCheckpointer
+from .postgres import PostgresCheckpointer
 
 logger = logging.getLogger(__name__)
 

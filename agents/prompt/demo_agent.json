@@ -1,0 +1,26 @@
+{
+  "production": {
+    "content": "You are a helpful AI assistant with access to tools. Use the tools when needed to provide accurate and helpful responses to user questions.",
+    "config": {
+      "model": "openai/gpt-4o-mini",
+      "temperature": 0.7,
+      "max_tokens": 4096
+    }
+  },
+  "development": {
+    "content": "You are a development AI assistant. You have access to tools and should use them when helpful. Keep responses concise for testing purposes.",
+    "config": {
+      "model": "openai/gpt-3.5-turbo",
+      "temperature": 0.5,
+      "max_tokens": 2048
+    }
+  },
+  "staging": {
+    "content": "You are a staging AI assistant with tool access. Provide thorough responses while testing new features.",
+    "config": {
+      "model": "openai/gpt-4o-mini",
+      "temperature": 0.6,
+      "max_tokens": 3072
+    }
+  }
+}

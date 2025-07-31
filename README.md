@@ -81,10 +81,11 @@ PRs welcome for:
 - [ ] ~~Keep alive SSE connection until the user closes the browser tab (??)~~
 - [ ] 🟡 Add a way to validate the user's access token (OAuth2)
 - [ ] 🟡 Add evaluation metrics
-- [ ] 🔴 Add *one more* abstraction layer so the agent can use different frameworks (LangGraph, LlamaIndex, etc.)
+- [x] 🔴 Add *one more* abstraction layer so the agent can use different frameworks (LangGraph, LlamaIndex, etc.)
 - [ ] 🟠 Add even more fucking abstractions to make it independent of observability tools (LangFuse, LangSmith, Grafana
   Alloy, or whatever the fuck else)
-- [ ] ⚪ Long-Term memory for each user. I want to add to chat application for real-time per thread prompt tuning - memory
+- [ ] ⚪ Long-Term memory for each user. I want to add to chat application for real-time per thread prompt tuning -
+  memory
   insights, response strategies, etc. But this is more about agent implementation not template core. Graph node as "
   addon package?" LOL! https://i.imgur.com/k1jk3cx.png here we go again!
 - [ ] ⚪ Guardrails ([LLMGuard implementation](https://github.com/assada/agent_template/tree/feat/guardrails) or handle
