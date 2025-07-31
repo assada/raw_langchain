@@ -3,7 +3,7 @@ from functools import lru_cache
 
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 
-from app.agent.langgraph.checkpoint.base import BaseCheckpointer
+from app.agent.frameworks.langgraph_framework.checkpoint.base import BaseCheckpointer
 from app.infrastructure.database.connection import DatabaseConnection
 
 logger = logging.getLogger(__name__)

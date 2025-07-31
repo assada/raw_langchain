@@ -7,10 +7,11 @@ from langgraph.graph import START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 
-from app.agent.langgraph import Graph
-from app.agent.langgraph.base_state import BaseState, State
-from app.agent.langgraph.demo.tools.tools import TOOLS
+from app.agent.frameworks.langgraph_framework import Graph
+from app.agent.frameworks.langgraph_framework.base_state import BaseState, State
 from app.agent.prompt import PromptProvider
+
+from .tools import TOOLS
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class DemoGraph(Graph):
 
     @property
     def graph_name(self) -> str:
-        return "demo_graph"
+        return "demo_agent"
 
     def get_tools(self) -> list[Any]:
         return TOOLS
