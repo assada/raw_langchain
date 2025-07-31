@@ -2,14 +2,14 @@ import logging
 from typing import Any, Literal
 
 from langchain_core.messages import AIMessage
-from langgraph.checkpoint.base import BaseCheckpointSaver
-from langgraph.graph import START, StateGraph
-from langgraph.graph.state import CompiledStateGraph
-from langgraph.prebuilt import ToolNode
 
 from app.agent.frameworks.langgraph_framework import Graph
 from app.agent.frameworks.langgraph_framework.base_state import BaseState, State
 from app.agent.prompt import PromptProvider
+from langgraph.checkpoint.base import BaseCheckpointSaver
+from langgraph.graph import START, StateGraph
+from langgraph.graph.state import CompiledStateGraph
+from langgraph.prebuilt import ToolNode
 
 from .tools import TOOLS
 
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 class DemoGraph(Graph):
     def __init__(
-        self, checkpointer: BaseCheckpointSaver[Any], prompt_provider: PromptProvider
+            self, checkpointer: BaseCheckpointSaver[Any], prompt_provider: PromptProvider, custom_config: dict[str, Any] | None = None
     ):
         super().__init__(checkpointer, prompt_provider)
 

@@ -1,0 +1,24 @@
+{
+  "name": "demo_llamaindex_agent",
+  "description": "Demo LlamaIndex agent with weather tool support",
+  "production": {
+    "framework": "llamaindex",
+    "class_name": "agents.llamaindex.demo.demo_agent.DemoLlamaIndexAgent",
+    "prompt_source": "file",
+    "custom_settings": {
+      "default_system_prompt": "You are a helpful AI assistant with access to weather information. When users ask about weather, use the get_weather tool to provide accurate information.",
+      "max_iterations": 10,
+      "verbose": false
+    }
+  },
+  "development": {
+    "framework": "llamaindex",
+    "class_name": "agents.llamaindex.demo.demo_agent.DemoLlamaIndexAgent",
+    "prompt_source": "file",
+    "custom_settings": {
+      "default_system_prompt": "You are a helpful AI assistant with access to weather information. When users ask about weather, use the get_weather tool to provide accurate information.",
+      "max_iterations": 5,
+      "verbose": false
+    }
+  }
+}

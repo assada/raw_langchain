@@ -1,10 +1,11 @@
 import logging
 
+from app.bootstrap.config import AppConfig
+from app.infrastructure.database.connection import DatabaseConnectionFactory
+
 from .base import BaseCheckpointer
 from .memory import MemoryCheckpointer
 from .postgres import PostgresCheckpointer
-from app.bootstrap.config import AppConfig
-from app.infrastructure.database.connection import DatabaseConnectionFactory
 
 logger = logging.getLogger(__name__)
 

@@ -17,8 +17,7 @@ class Thread(BaseModel):
         description="Thread ID.",
         examples=["edd5a53c-da04-4db4-84e0-a9f3592eef45"],
     )
-    agent_id: str | None = Field(
-        default=None,
+    agent_id: str = Field(
         description="The ID of the agent associated with this thread.",
         examples=["agent-12345"],
     )

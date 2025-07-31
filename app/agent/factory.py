@@ -32,7 +32,7 @@ class AgentFactory:
     async def create_agent(
             self,
             agent_id: str,
-            environment: str | None = None,
+            environment: str,
     ) -> AgentInstance:
         agent_config = self.config_loader.get_agent_config(agent_id)
         if not agent_config:

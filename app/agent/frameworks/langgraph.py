@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib
 import json
 import logging
 from collections.abc import AsyncGenerator
@@ -44,7 +43,7 @@ class LangGraphAgentInstance(AgentInstance):
         self.langfuse = langfuse
         self.stream_processor = StreamProcessor()
 
-    async def stream_response(
+    async def stream_response( # type: ignore[override]
             self, message: str, thread: Thread, user: User
     ) -> AsyncGenerator[dict[str, Any]]:
         with self.langfuse.start_as_current_span(
@@ -89,7 +88,7 @@ class LangGraphAgentInstance(AgentInstance):
                     data=json.dumps({"run_id": str(run_id), "content": str(e)})
                 ).model_dump()
 
-    async def load_history(
+    async def load_history( # type: ignore[override]
             self, thread: Thread, user: User
     ) -> AsyncGenerator[dict[str, Any]]:
         try:
@@ -132,16 +131,6 @@ class LangGraphFramework(AgentFramework):
     def framework_name(self) -> str:
         return "langgraph"
 
-    def _load_graph_class(self, graph_class_name: str):
-        module_name, class_name = graph_class_name.rsplit('.', 1)
-
-        try:
-            module = importlib.import_module(module_name)
-            return getattr(module, class_name)
-        except ImportError as e:
-            raise ImportError(f"Could not import module {module_name}: {e}")
-        except AttributeError as e:
-            raise AttributeError(f"Class {class_name} not found in module {module_name}: {e}")
 
     async def create_agent(
             self,
@@ -153,18 +142,17 @@ class LangGraphFramework(AgentFramework):
 
         checkpointer_provider = await CheckpointerFactory.create(global_config) ## TODO: Agent config
         checkpointer = await checkpointer_provider.get_checkpointer()
-        logger.warning(agent_config.prompt_source)
+
         prompt_provider = create_prompt_provider(
             prompt_source=agent_config.prompt_source,
             langfuse_client=langfuse if agent_config.prompt_source == "langfuse" else None,
             prompt_dir=global_config.prompt_dir
         )
 
-        graph_class_name = agent_config.graph_class
-        graph_class = self._load_graph_class(graph_class_name)
+        agent_class = self._load_agent_class(agent_config.class_name)
 
-        graph_instance = graph_class(checkpointer, prompt_provider, agent_config.custom_settings)
-        compiled_graph = graph_instance.build_graph()
+        agent_instance = agent_class(checkpointer, prompt_provider, agent_config.custom_settings)
+        compiled_graph = agent_instance.build_graph()
 
         return LangGraphAgentInstance(
             agent_id=agent_id,

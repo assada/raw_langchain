@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import Depends, HTTPException
 from langfuse import Langfuse  # type: ignore[attr-defined]
-from sse_starlette.sse import EventSourceResponse  # type: ignore[attr-defined]
+from sse_starlette.sse import EventSourceResponse
 
 from app.agent.factory import AgentFactory
 from app.agent.frameworks.base import AgentInstance
@@ -24,7 +24,7 @@ class ThreadController:
         self._agent_instances: dict[str, AgentInstance] = {}
         self._agent_service = AgentService(Langfuse(debug=False))
 
-    async def _get_agent_instance(self, agent_id: str | None = None) -> AgentInstance:
+    async def _get_agent_instance(self, agent_id: str) -> AgentInstance:
         environment = self.config.environment
         cache_key = f"{agent_id}:{environment}"
         if cache_key in self._agent_instances:
@@ -51,14 +51,14 @@ class ThreadController:
 
         if agent_id and thread.agent_id != agent_id:
             thread.agent_id = agent_id
-        effective_agent_id = agent_id or thread.agent_id
+        effective_agent_id: str = agent_id or thread.agent_id
 
         try:
             agent_instance = await self._get_agent_instance(effective_agent_id)
             logger.debug(f"Received chat request: {str(query)[:50]}...")
 
             return EventSourceResponse(
-                agent_instance.stream_response(str(query), thread, user),  # type: ignore[union-attr]
+                agent_instance.stream_response(str(query), thread, user),  # type: ignore[arg-type]
                 headers={
                     "Cache-Control": "no-cache",
                     "Connection": "keep-alive",
@@ -79,7 +79,7 @@ class ThreadController:
         try:
             agent_instance = await self._get_agent_instance(thread.agent_id)
             return EventSourceResponse(
-                agent_instance.load_history(thread, user),  # type: ignore[union-attr]
+                agent_instance.load_history(thread, user),   # type: ignore[arg-type]
                 headers={
                     "Cache-Control": "no-cache",
                     "Connection": "keep-alive",
@@ -89,6 +89,8 @@ class ThreadController:
                 },
             )
         except Exception as e:
+            import traceback
+            logger.error(f"Error fetching thread history: {traceback.format_exc()}")
             logger.error(f"Error fetching thread history: {str(e)}")
             raise HTTPException(status_code=500, detail="Internal server error") from e
 
@@ -98,6 +100,6 @@ class ThreadController:
         user: User = Depends(UserRepository.get_user_by_id),  # noqa: B008
         thread: Thread = Depends(ThreadRepository.get_thread_by_id),  # noqa: B008
     ) -> dict[str, str]:
-        return await self._agent_service.add_feedback(  # type: ignore[union-attr]
+        return await self._agent_service.add_feedback(
             trace=request.trace_id, feedback=request.feedback, thread=thread, user=user
         )

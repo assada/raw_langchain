@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import AsyncGenerator
@@ -37,6 +38,20 @@ class AgentFramework(ABC):
         """Name of the framework (e.g., 'langgraph', 'llamaindex', 'google_adk')."""
         pass
 
+    def _load_agent_class(self, agent_class_name: str) -> Any:
+        if not agent_class_name or '.' not in agent_class_name:
+            raise ValueError(f"Invalid agent class name: {agent_class_name}")
+            
+        module_name, class_name = agent_class_name.rsplit('.', 1)
+
+        try:
+            module = importlib.import_module(module_name)
+            return getattr(module, class_name)
+        except ImportError as e:
+            raise ImportError(f"Could not import module {module_name}: {e}") from e
+        except AttributeError as e:
+            raise AttributeError(f"Class {class_name} not found in module {module_name}: {e}") from e
+
     @abstractmethod
     async def create_agent(
             self,
@@ -44,5 +59,4 @@ class AgentFramework(ABC):
             agent_config: EnvironmentConfig,
             global_config: AppConfig
     ) -> AgentInstance:
-        """Create an agent instance for this framework."""
         pass
