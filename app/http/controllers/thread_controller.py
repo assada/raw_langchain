@@ -43,15 +43,12 @@ class ThreadController:
 
     async def stream(
         self,
-        query: dict[str, Any] | list[Any] | str | float | bool | None,
+            query: dict[str, Any] | list[Any] | str | float | bool | None,
         thread_id: UUID | None,
         metadata: dict[str, Any] | None,
+        user: User,
     ) -> EventSourceResponse:
-        if not metadata or "user_id" not in metadata:
-            raise HTTPException(status_code=400, detail="User is required")
-
         thread = await ThreadRepository.get_thread_by_id(str(thread_id))
-        user = await UserRepository.get_user_by_id(str(metadata["user_id"]))
 
         try:
             await self._initialize()

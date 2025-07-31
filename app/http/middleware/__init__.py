@@ -1,8 +1,8 @@
-from .auth_middleware import AuthMiddleware
+from .auth import get_current_user
 from .cors_middleware import CORSConfig, setup_cors_middleware
 
 __all__ = [
     "setup_cors_middleware",
     "CORSConfig",
-    "AuthMiddleware",
+    "get_current_user"
 ]

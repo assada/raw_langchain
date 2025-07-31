@@ -7,7 +7,6 @@ from fastapi.staticfiles import StaticFiles
 # from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
 from prometheus_fastapi_instrumentator import Instrumentator
 
-from app.http.middleware.auth_middleware import AuthMiddleware
 from app.http.middleware.cors_middleware import CORSConfig, setup_cors_middleware
 from app.utils.utils import is_valid_uuid4
 
@@ -39,8 +38,6 @@ def create_app(config: AppConfig) -> FastAPI:
         validator=is_valid_uuid4,
         transformer=lambda a: a,
     )
-
-    app.add_middleware(AuthMiddleware)
 
     app.include_router(runs_router, prefix="/api/v1")
     app.include_router(thread_router, prefix="/api/v1")

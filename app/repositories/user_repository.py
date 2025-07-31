@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 class UserRepository:
     @staticmethod
-    async def get_user_by_id(user_id: str) -> User:
+    async def get_user_by_id(user_id: str) -> User | None:
         try:
             if user_id is None:
                 raise HTTPException(status_code=400, detail="Invalid user ID")
@@ -18,7 +18,7 @@ class UserRepository:
             user = User(id=user_id, email=f"user{user_id}@example.com")
 
             if not user:
-                raise HTTPException(status_code=404, detail="User not found")
+                return None
 
             logger.debug(f"Resolved user: {user.id} - {user.email}")
             return user
