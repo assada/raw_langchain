@@ -13,7 +13,7 @@ from langchain_core.runnables import RunnableConfig
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph.state import CompiledStateGraph
 
-from app.agent.graph.base_state import BaseState, State
+from app.agent.langgraph.base_state import BaseState, State
 from app.agent.prompt import Prompt, PromptProvider
 
 logger = logging.getLogger(__name__)

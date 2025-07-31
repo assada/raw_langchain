@@ -7,9 +7,9 @@ from langgraph.graph import START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 
-from app.agent.graph import Graph
-from app.agent.graph.base_state import BaseState, State
-from app.agent.graph.demo.tools.tools import TOOLS
+from app.agent.langgraph import Graph
+from app.agent.langgraph.base_state import BaseState, State
+from app.agent.langgraph.demo.tools.tools import TOOLS
 from app.agent.prompt import PromptProvider
 
 logger = logging.getLogger(__name__)

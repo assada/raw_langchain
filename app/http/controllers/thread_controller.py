@@ -7,8 +7,8 @@ from langfuse import Langfuse  # type: ignore[attr-defined]
 from langgraph.graph.state import CompiledStateGraph
 from sse_starlette.sse import EventSourceResponse
 
-from app.agent.checkpoint.factory import CheckpointerFactory
-from app.agent.graph.demo.demo_graph import DemoGraph
+from app.agent.langgraph.checkpoint.factory import CheckpointerFactory
+from app.agent.langgraph.demo.demo_graph import DemoGraph
 from app.agent.prompt import LangfusePromptProvider
 from app.agent.services import AgentService
 from app.bootstrap.config import AppConfig
@@ -43,7 +43,7 @@ class ThreadController:
 
     async def stream(
         self,
-            query: dict[str, Any] | list[Any] | str | float | bool | None,
+        query: dict[str, Any] | list[Any] | str | float | bool | None,
         thread_id: UUID | None,
         metadata: dict[str, Any] | None,
         user: User,

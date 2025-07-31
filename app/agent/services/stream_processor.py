@@ -15,7 +15,7 @@ from app.agent.models import AIMessage as CustomAIMessage
 from app.agent.models import HumanMessage, Token
 from app.agent.services.events import EndEvent, ErrorEvent, TokenEvent
 from app.agent.services.events.base_event import BaseEvent
-from app.agent.utils import (
+from app.agent.langgraph.utils import (
     concat_text,
     strip_tool_calls,
     to_chat_message,

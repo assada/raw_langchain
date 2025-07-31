@@ -1,8 +1,8 @@
 import logging
 
-from app.agent.checkpoint.base import BaseCheckpointer
-from app.agent.checkpoint.memory import MemoryCheckpointer
-from app.agent.checkpoint.postgres import PostgresCheckpointer
+from app.agent.langgraph.checkpoint.base import BaseCheckpointer
+from app.agent.langgraph.checkpoint.memory import MemoryCheckpointer
+from app.agent.langgraph.checkpoint.postgres import PostgresCheckpointer
 from app.bootstrap.config import AppConfig
 from app.infrastructure.database.connection import DatabaseConnectionFactory
 

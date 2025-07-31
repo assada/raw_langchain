@@ -3,7 +3,7 @@ from functools import lru_cache
 
 from langgraph.checkpoint.memory import InMemorySaver
 
-from app.agent.checkpoint.base import BaseCheckpointer
+from app.agent.langgraph.checkpoint.base import BaseCheckpointer
 
 logger = logging.getLogger(__name__)
 

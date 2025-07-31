@@ -14,7 +14,7 @@ from langgraph.graph.state import CompiledStateGraph
 from app.agent.services.events import EndEvent, ErrorEvent
 from app.agent.services.events.base_event import BaseEvent
 from app.agent.services.stream_processor import StreamProcessor
-from app.agent.utils import to_chat_message
+from app.agent.langgraph.utils import to_chat_message
 from app.models import Thread, User
 from app.models.thread import ThreadStatus
 
@@ -22,16 +22,16 @@ logger = logging.getLogger(__name__)
 
 
 class AgentService:
-    def __init__(self, graph: CompiledStateGraph[Any, Any, Any], langfuse: Langfuse):
+    def __init__(self, agent: CompiledStateGraph[Any, Any, Any], langfuse: Langfuse):
         self.langfuse = langfuse
-        self.graph = graph
+        self.agent = agent
         self.stream_processor = StreamProcessor()
 
     async def stream_response(
         self, message: str, thread: Thread, user: User
     ) -> AsyncGenerator[dict[str, Any]]:
         with self.langfuse.start_as_current_span(
-            name=self.graph.name, input=message
+            name=self.agent.name, input=message
         ) as span:
             run_id = uuid4()
 
@@ -58,7 +58,7 @@ class AgentService:
             )
 
             try:
-                stream = self.graph.astream(
+                stream = self.agent.astream(
                     inputs, stream_mode=["updates", "messages", "custom"], config=config
                 )
                 async for event in self.stream_processor.process_stream(
@@ -76,7 +76,7 @@ class AgentService:
         self, thread: Thread, user: User
     ) -> AsyncGenerator[dict[str, Any]]:
         try:
-            state_snapshot = await self.graph.aget_state(
+            state_snapshot = await self.agent.aget_state(
                 config=RunnableConfig(
                     configurable={"thread_id": thread.id, "user_id": user.id}
                 ),
